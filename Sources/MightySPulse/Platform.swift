@@ -143,13 +143,14 @@ internal enum PulseEnvironment {
         let model = hardwareModel(machine: machine(),
                                   simulatorModel: ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"], fallback: family)
         let os = ProcessInfo.processInfo.operatingSystemVersion
-        return ["platform": platform, "osName": osName,
+        let basics = ["platform": platform, "osName": osName,
                 "osVersion": versionText(major: os.majorVersion, minor: os.minorVersion, patch: os.patchVersion),
                 "appVersion": appVersionText(
                     shortVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
                     buildNumber: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String),
                 "appBuildNumber": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
                 "deviceModel": model, "locale": Locale.current.identifier.replacingOccurrences(of: "_", with: "-")]
+        return basics.merging(staticContext()) { current, _ in current }
     }
 }
 

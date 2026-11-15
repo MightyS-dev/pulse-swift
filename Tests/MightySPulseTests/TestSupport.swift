@@ -35,7 +35,7 @@ final class FakeStorage: PulseStorage {
     // The runtime writes from its serial queue while tests read from the main thread.
     private let lock = NSLock()
     private var _files: [String: Data] = [:]
-    private var _failReads = false, _failWrites = false, _failPreference = false, _failInstallID = false
+    private var _failReads = false, _failWrites = false, _failPreference = false, _failInstallID = false, _failUsage = false
     private var _afterReplace: ((String) -> Void)?
     private func locked<T>(_ body: () -> T) -> T { lock.lock(); defer { lock.unlock() }; return body() }
     var files: [String: Data] {
@@ -46,13 +46,14 @@ final class FakeStorage: PulseStorage {
     var failWrites: Bool { get { locked { _failWrites } } set { locked { _failWrites = newValue } } }
     var failPreference: Bool { get { locked { _failPreference } } set { locked { _failPreference = newValue } } }
     var failInstallID: Bool { get { locked { _failInstallID } } set { locked { _failInstallID = newValue } } }
+    var failUsage: Bool { get { locked { _failUsage } } set { locked { _failUsage = newValue } } }
     var afterReplace: ((String) -> Void)? { get { locked { _afterReplace } } set { locked { _afterReplace = newValue } } }
     func read(_ name: String) throws -> Data? {
-        if failReads || (failInstallID && name == "install-id") { throw PulseFailure.unavailable }
+        if failReads || (failInstallID && name == "install-id") || (failUsage && name == "usage") { throw PulseFailure.unavailable }
         return locked { _files[name] }
     }
     func replace(_ name: String, with data: Data) throws {
-        if failWrites || (failPreference && name == "opt-out") || (failInstallID && name == "install-id") { throw PulseFailure.unavailable }
+        if failWrites || (failPreference && name == "opt-out") || (failInstallID && name == "install-id") || (failUsage && name == "usage") { throw PulseFailure.unavailable }
         locked { _files[name] = data }
         afterReplace?(name)
     }
@@ -75,6 +76,16 @@ final class FakeTransport: PulseTransport {
         return cancellation
     }
 }
+final class FakeDevice: PulseDeviceSource {
+    private let lock = NSLock()
+    private var values: [String: String]
+    private(set) var started = false
+    init(_ values: [String: String] = [:]) { self.values = values }
+    func set(_ key: String, _ value: String?) { lock.lock(); values[key] = value; lock.unlock() }
+    func start() { lock.lock(); started = true; lock.unlock() }
+    func awaitReady(timeout: TimeInterval) {}
+    func snapshot() -> [String: String] { lock.lock(); defer { lock.unlock() }; return values }
+}
 final class Harness {
     let clock: FakeClock
     let storage: FakeStorage
@@ -82,12 +93,13 @@ final class Harness {
     let runtime: PulseRuntime
     init(options: PulseOptions = PulseOptions(), storage: FakeStorage = FakeStorage(),
          clock: FakeClock = FakeClock(), key: String = "synthetic-key", initialize: Bool = true,
-         random: @escaping () -> Double = { 0.5 }) {
+         random: @escaping () -> Double = { 0.5 }, device: PulseDeviceSource = PulseNoDevice(),
+         automatic: Bool = false, version: String = "1.2.3", build: String = "42") {
         self.storage = storage; self.clock = clock
         runtime = PulseRuntime(clock: clock, transport: transport, storage: storage, environment: {
-            ["platform": "mobile", "osName": "iOS", "osVersion": "18.0.0", "appVersion": "1.2.3",
-             "appBuildNumber": "42", "deviceModel": "Apple mobile device", "locale": "sr-RS"]
-        }, random: random)
+            ["platform": "mobile", "osName": "iOS", "osVersion": "18.0.0", "appVersion": version,
+             "appBuildNumber": build, "deviceModel": "Apple mobile device", "locale": "sr-RS"]
+        }, random: random, device: device, automatic: automatic, zone: { TimeZone(identifier: "UTC")! })
         if initialize { runtime.initialize(appKey: key, options: options); settle() }
     }
     func settle(_ passes: Int = 64) { for _ in 0..<passes { runtime.barrier() } }

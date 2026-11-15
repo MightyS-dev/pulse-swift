@@ -12,7 +12,7 @@ final class SerializationTests: XCTestCase {
         let event = try XCTUnwrap(h.events.first)
         XCTAssertEqual(Set(event.keys), Set(fixture[0].keys))
         let system = try XCTUnwrap(event["system"] as? [String: String])
-        XCTAssertEqual(Set(system.keys), Set((fixture[0]["system"] as! [String: Any]).keys))
+        XCTAssertTrue(Set((fixture[0]["system"] as! [String: Any]).keys).isSubset(of: Set(system.keys)))
         XCTAssertEqual(system["sdkName"], "pulse-swift")
         XCTAssertEqual(system["osVersion"], "18.0.0")
         XCTAssertTrue((event["timestamp"] as! String).hasSuffix("Z"))
@@ -94,7 +94,7 @@ final class SerializationTests: XCTestCase {
         let environment = PulseEnvironment.system()
         XCTAssertNotNil(environment["osVersion"]?.range(of: "^[0-9]+\\.[0-9]+(\\.[1-9][0-9]*)?$", options: .regularExpression))
         XCTAssertNil(environment["deviceId"]); XCTAssertNil(environment["deviceName"])
-        XCTAssertNil(environment["bundleId"]); XCTAssertNil(environment["identifierForVendor"])
+        XCTAssertEqual(environment["bundleId"], Bundle.main.bundleIdentifier); XCTAssertNil(environment["identifierForVendor"])
     }
     func testDeviceModelIsHardwareIdentifierWithSafeFallbacks() {
         XCTAssertEqual(PulseEnvironment.hardwareModel(machine: "iPhone17,1", simulatorModel: nil, fallback: "Apple mobile device"), "iPhone17,1")

@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.2`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.3`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.2")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.3")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -48,8 +48,29 @@ queue.
 ## What is sent and what is never sent
 
 Sent with every signal: your signal name, optional number and properties, a UTC timestamp, the debug flag, a random session
-id, platform, numeric OS version, app version and build, hardware model identifier (for example `iPhone17,1`, which names a
-product line and not a device), locale, and the SDK name and version. iPadOS is reported as `iOS`.
+id, a hashed user id (see below), and the device, screen, settings, app and usage fields listed here. A value the platform
+cannot give is left out, never guessed. iPadOS is reported as `iOS`.
+
+| Group | Fields |
+|---|---|
+| Device | `platform`, `osName`, `osVersion`, `deviceModel` (hardware model identifier such as `iPhone17,1`, a product line and not a device), `deviceType` (phone, tablet, desktop, tv, watch, vision, car), `deviceBrand`, `architecture`, `isSimulator`, `targetEnvironment` (native, simulator, catalyst, ios-on-mac) |
+| Screen | `screenWidth`, `screenHeight` (points), `screenScale`, `screenWidthPx`, `screenHeightPx`, `screenCount`, `orientation` (iOS and iPadOS only) |
+| Settings and accessibility | `locale`, `language`, `preferredLanguage`, `region`, `layoutDirection`, `timeZone`, `utcOffsetMinutes`, `colorScheme`, `fontScale`, `contentSizeCategory`, `reduceMotion`, `boldText`, `invertColors`, `increaseContrast`, `reduceTransparency`, `differentiateWithoutColor`, `connectionType` (wifi, cellular, ethernet, none, other), `lowPowerMode` |
+| App and install | `appVersion`, `appBuildNumber`, `bundleId`, `appName`, `installSource` (appstore, testflight, debug, other), `isDebugBuild`, `extensionId` (only inside an app extension), `sdkName`, `sdkVersion` |
+| Usage statistics | `firstSessionDate`, `totalSessionsCount`, `distinctDaysUsed`, `distinctDaysUsedLastMonth`, `previousSessionSeconds`, `averageSessionSeconds`, `sessionSeconds`, `isNewInstall` (first session only) |
+
+Values that can change (orientation, appearance, text size, accessibility settings, network type, low power mode, screen
+size) are read on the main thread, cached, and refreshed when the system reports a change, so a signal never waits for
+the main thread. Not every field exists on every platform: for example `orientation` is iOS and iPadOS only, and
+`contentSizeCategory` is not sent from app extensions.
+
+Usage statistics are kept in one small file next to the install id, in the app's own storage, and deleted by opt-out.
+
+Automatic signals: the SDK sends three signals itself. `pulse.session_started` is sent when a new session begins (app start,
+or the first signal after 30 minutes of inactivity). `pulse.new_install` is sent once, on the first launch after install.
+`pulse.app_updated` is sent once when the app version or build differs from the previous launch, with the properties
+`previousVersion` and `previousBuild`. They are one per session or rarer, they follow opt-out and the debug flag like any
+signal, and there is nothing to set up.
 
 Sessions use a random id that changes after 30 minutes of inactivity.
 
@@ -61,7 +82,7 @@ User id: optional. If you call `setUser`, the id is hashed with SHA-256 on the d
 The raw id is never stored or sent. The hash is pseudonymous and can link one user's signals.
 
 Never sent: IDFA, IDFV, serial numbers, MAC addresses, device names, location, contacts, email,
-cookies, or the app's bundle identifier. The SDK does not use the Keychain or UserDefaults.
+cookies, the carrier name or the list of installed apps. The SDK does not use the Keychain or UserDefaults.
 
 IP address: the SDK does not read or send the device's IP address as data. As with any HTTP request, the server sees the
 connection address, uses it only to derive a two-letter country code and does not store it.

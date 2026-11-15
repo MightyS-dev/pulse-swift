@@ -11,6 +11,12 @@ internal final class PulseRuntime {
     private let storage: PulseStorage
     private let environment: () -> [String: String]
     private let random: () -> Double
+    private let device: PulseDeviceSource
+    private let automatic: Bool
+    private let zone: () -> TimeZone
+    private let usage: PulseUsageTracker
+    private var installCreated = false
+    private var bootEnvironment: [String: String]?
     private var options = PulseOptions()
     private var endpoint: URL?
     private var appKey: String?
@@ -43,9 +49,13 @@ internal final class PulseRuntime {
     private var waiters: [Waiter] = []
 
     init(clock: PulseClock, transport: PulseTransport, storage: PulseStorage,
-         environment: @escaping () -> [String: String], random: @escaping () -> Double = { Double.random(in: 0..<1) }) {
+         environment: @escaping () -> [String: String], random: @escaping () -> Double = { Double.random(in: 0..<1) },
+         device: PulseDeviceSource = PulseNoDevice(), automatic: Bool = true,
+         zone: @escaping () -> TimeZone = { TimeZone.autoupdatingCurrent }) {
         self.clock = clock; self.transport = transport; self.storage = storage
         self.environment = environment; self.random = random
+        self.device = device; self.automatic = automatic; self.zone = zone
+        self.usage = PulseUsageTracker(storage: storage, zone: zone)
         do {
             privacyValue = Self.storedOptOut(try storage.read("opt-out"))
             if let bytes = try storage.read("privacy-generation") {
@@ -77,6 +87,7 @@ internal final class PulseRuntime {
                 privacyLock.unlock()
                 guard current else { return }
                 userHash = nil; installHash = nil; session = UUID().uuidString; lastActivity = .distantPast
+                usage.reset(); installCreated = false
                 beforeInitialize.removeAll(); entries.removeAll(); pending.removeAll()
                 active?.cancel(); active = nil; activeID = nil
                 preferenceDirty = newValue
@@ -103,7 +114,10 @@ internal final class PulseRuntime {
             options = normalized; appKey = key; endpoint = address
             storageName = "queue-" + PulseHash.hex(key) + ".bin"
             interval = normalized.flushIntervalSeconds; nextFlush = clock.now
-            system = environment().mapValues { String(decoding: $0.utf8.prefix(256), as: UTF8.self) }
+            system = (bootEnvironment ?? environment()).mapValues { String(decoding: $0.utf8.prefix(256), as: UTF8.self) }
+            system = system.filter { !$0.value.isEmpty }
+            device.start()
+            device.awaitReady(timeout: 0.25)
             system["sdkName"] = PulseInfo.sdkName; system["sdkVersion"] = PulseInfo.version
             if let version = normalized.appVersion { system["appVersion"] = String(decoding: version.utf8.prefix(256), as: UTF8.self) }
             requestPump()
@@ -123,18 +137,51 @@ internal final class PulseRuntime {
         let capturedAt = clock.now
         state.async { [self] in
             guard !optOut, !stopped else { return }
-            if capturedAt.timeIntervalSince(lastActivity) >= 1800 { session = UUID().uuidString }
+            let anonymous = anonymousHash()
+            let hash = userHash ?? anonymous
+            var started = false
+            if capturedAt.timeIntervalSince(lastActivity) >= 1800 { session = UUID().uuidString; started = true }
             lastActivity = capturedAt
-            let input = PulseInput(timestamp: capturedAt, session: session, userHash: userHash ?? anonymousHash(),
-                                   type: type, value: value, props: capturedProps)
-            if appKey == nil {
-                if beforeInitialize.count == 100 { beforeInitialize.removeFirst() }
-                beforeInitialize.append(input)
-            } else {
-                append(input)
-                requestPump()
-            }
+            var inputs: [PulseInput] = []
+            if started {
+                let version = currentVersion()
+                let begun = usage.startSession(now: capturedAt, version: version.0, build: version.1, isNewInstall: installCreated)
+                let fresh = installCreated
+                installCreated = false
+                if automatic {
+                    inputs.append(automaticInput("pulse.session_started", at: capturedAt, hash: hash, props: [:]))
+                    if fresh { inputs.append(automaticInput("pulse.new_install", at: capturedAt, hash: hash, props: [:])) }
+                    if let old = begun.appUpdated {
+                        inputs.append(automaticInput("pulse.app_updated", at: capturedAt, hash: hash,
+                                                     props: ["previousVersion": old.version, "previousBuild": old.build]))
+                    }
+                }
+            } else { usage.touch(now: capturedAt) }
+            inputs.append(PulseInput(timestamp: capturedAt, session: session, userHash: hash, type: type, value: value,
+                                     props: capturedProps, extra: extraFields(at: capturedAt)))
+            for input in inputs { accept(input) }
+            if appKey != nil { requestPump() }
         }
+    }
+    private func accept(_ input: PulseInput) {
+        if appKey == nil {
+            if beforeInitialize.count == 100 { beforeInitialize.removeFirst() }
+            beforeInitialize.append(input)
+        } else { append(input) }
+    }
+    private func automaticInput(_ type: String, at date: Date, hash: String, props: [String: Any]) -> PulseInput {
+        PulseInput(timestamp: date, session: session, userHash: hash, type: type, value: nil, props: props, extra: extraFields(at: date))
+    }
+    private func extraFields(at date: Date) -> [String: String] {
+        var fields = usage.fields(now: date)
+        for (key, value) in PulseEnvironment.timeFields(zone: zone(), at: date) { fields[key] = value }
+        return fields
+    }
+    /// The app version and build as they will be sent: the override when one was given after initialize.
+    private func currentVersion() -> (String, String) {
+        if appKey != nil { return (system["appVersion"] ?? "", system["appBuildNumber"] ?? "") }
+        if bootEnvironment == nil { bootEnvironment = environment() }
+        return (bootEnvironment?["appVersion"] ?? "", bootEnvironment?["appBuildNumber"] ?? "")
     }
     /// Hash of the random install id, used for every signal until the app calls setUser. Created once and kept in
     /// the SDK's own storage. If the storage cannot be read or written, the id lives in memory for this process.
@@ -146,7 +193,7 @@ internal final class PulseRuntime {
         }
         if identifier == nil {
             let fresh = (0..<16).map { _ in String(format: "%02x", UInt8.random(in: 0...255)) }.joined()
-            try? storage.replace("install-id", with: Data(fresh.utf8))
+            if (try? storage.replace("install-id", with: Data(fresh.utf8))) != nil { installCreated = true }
             identifier = fresh
         }
         let hash = PulseHash.hex(identifier ?? "")
@@ -183,6 +230,7 @@ internal final class PulseRuntime {
     func background() {
         state.async { [self] in
             guard !stopped else { return }
+            usage.persist(now: clock.now)
             forced = true
             pump() // Queue is saved before transport starts, even when sending is paused.
         }
@@ -190,7 +238,7 @@ internal final class PulseRuntime {
     func backgroundSave(timeout: TimeInterval = 2) {
         let finished = DispatchSemaphore(value: 0)
         state.async { [self] in
-            if !stopped { forced = true; pump() }
+            if !stopped { usage.persist(now: clock.now); forced = true; pump() }
             finished.signal()
         }
         _ = finished.wait(timeout: .now() + max(0, min(2, timeout)))
@@ -198,6 +246,7 @@ internal final class PulseRuntime {
     func finalSave(timeout: TimeInterval = 2) {
         let finished = DispatchSemaphore(value: 0)
         state.async { [self] in
+            usage.persist(now: clock.now)
             stopped = true; timer?.cancel(); timer = nil
             active?.cancel(); active = nil; activeID = nil
             if load() { _ = persist() }
@@ -209,7 +258,9 @@ internal final class PulseRuntime {
     }
 
     private func append(_ input: PulseInput) {
-        guard let json = PulseJSON.signal(input, system: system, debug: options.debug) else {
+        var context = system.merging(device.snapshot()) { _, live in live }
+        context.merge(input.extra) { _, extra in extra }
+        guard let json = PulseJSON.signal(input, system: context.filter { !$0.value.isEmpty }, debug: options.debug) else {
             warn("Invalid signal ignored."); return
         }
         entries.append(PulseEntry(id: UUID(), timestamp: input.timestamp, json: json))
@@ -250,6 +301,7 @@ internal final class PulseRuntime {
             if desired { try storage.replace("opt-out", with: Data([1])) }
             // The anonymous install id goes away with the queue. A new one is created at the next signal.
             try storage.remove("install-id")
+            try storage.remove(PulseUsageTracker.fileName)
             // Invalidate every app-key queue, including queues not opened in this process.
             try storage.replace("privacy-generation", with: Data(generation.utf8))
             if let name = storageName { try storage.remove(name) }

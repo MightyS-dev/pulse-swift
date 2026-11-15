@@ -16,7 +16,8 @@ import Foundation
 /// host app, and none blocks the main thread.
 public enum Pulse {
     private static let runtime = PulseRuntime(clock: PulseSystemClock(), transport: PulseURLTransport(),
-                                             storage: PulseFileStorage.standard(), environment: PulseEnvironment.system)
+                                             storage: PulseFileStorage.standard(), environment: PulseEnvironment.system,
+                                             device: PulseLiveDevice())
     private static let lifecycle = PulseLifecycle(runtime: runtime)
 
     /// Starts the SDK. Call it once, early in app startup. Later calls are ignored.

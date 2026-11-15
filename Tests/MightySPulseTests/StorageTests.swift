@@ -55,13 +55,13 @@ final class StorageTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let clock = FakeClock(), transport = FakeTransport()
         transport.handler = { _, _ in }  // first send leaves at once and never completes, so the batch stays on disk
-        let first = PulseRuntime(clock: clock, transport: transport, storage: PulseFileStorage(directory: root), environment: { [:] })
+        let first = PulseRuntime(clock: clock, transport: transport, storage: PulseFileStorage(directory: root), environment: { [:] }, automatic: false)
         first.initialize(appKey: "synthetic-key", options: PulseOptions())
         first.track("saved.to.disk")
         for _ in 0..<10 { first.barrier() }
         XCTAssertEqual(transport.requests.count, 1)
         let next = FakeTransport()
-        let restored = PulseRuntime(clock: clock, transport: next, storage: PulseFileStorage(directory: root), environment: { [:] })
+        let restored = PulseRuntime(clock: clock, transport: next, storage: PulseFileStorage(directory: root), environment: { [:] }, automatic: false)
         restored.initialize(appKey: "synthetic-key", options: PulseOptions())
         for _ in 0..<10 { restored.barrier() }
         XCTAssertEqual(next.requests.count, 1)

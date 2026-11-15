@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.2"
+    static let version = "0.9.3"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -79,6 +79,8 @@ internal struct PulseInput {
     let type: String
     let value: Double?
     let props: [String: Any]
+    /// Fields captured with the signal: session statistics and time zone.
+    var extra: [String: String] = [:]
 }
 
 internal enum PulseJSON {
