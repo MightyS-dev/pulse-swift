@@ -1,20 +1,22 @@
 # MightyS Pulse for Swift
 
-Privacy-first analytics for apps and games. No device IDs, offline queue, tiny.
+Privacy-first analytics for iOS, macOS, tvOS and watchOS apps and games. No IDFA, no device IDs, offline queue, privacy manifest included.
 
-MightyS Pulse lets an iOS, iPadOS, macOS, tvOS or watchOS app send named signals (events) with an optional number and a
-few properties, and see them in a dashboard. The SDK reads no advertising ID and no device identifier, and sets no cookies.
+Docs: https://pulse.mightys.dev/docs/swift/
+
+Send named signals (events) with an optional number and a
+few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in the MightyS Pulse dashboard. The SDK reads no advertising ID and no device identifier, and sets no cookies.
 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.0`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.1`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.0")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.1")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -78,8 +80,18 @@ Pulse.initialize(appKey: "YOUR_APP_KEY", options: options)
 | `maxQueueSize` | 1000 | Signals kept offline. Clamped to 1 through 10000. The oldest are dropped first. |
 | `maxQueueAgeDays` | 7 | Days a queued signal is kept. Capped at 29. |
 | `gzip` | true | Compresses bodies larger than 1024 bytes. |
-| `debug` | true in debug builds | Marks signals as test data and prints short diagnostics, never signal contents. |
+| `debug` | true in a Debug build, false in a Release build | Marks signals as test data and prints short diagnostics, never signal contents. See [Test mode](#test-mode). |
 | `appVersion` | bundle short version | Overrides the app version. |
+
+## Test mode
+
+Every signal carries a `debug` flag. `debug = true` means test data, and the dashboard's test mode switch chooses whether you see test signals or real ones. You need only one app key per app: the same key serves both.
+
+Unless you set it, `PulseOptions.debug` is `true` when your app is built in the Debug configuration (a run from Xcode) and `false` in a Release build, which includes Archive, TestFlight and the App Store. SwiftPM compiles the package with your app's configuration, and the value is fixed for a given build. If you build an app with a custom configuration, check which one it follows. An explicit `options.debug` always wins, in both directions:
+
+```swift
+options.debug = true // force test data
+```
 
 ## Delivery and offline behaviour
 

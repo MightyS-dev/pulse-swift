@@ -3,7 +3,7 @@ import XCTest
 @testable import MightySPulse
 
 final class SerializationTests: XCTestCase {
-    func testContractShapeMatchesFirstPartyServerFixture() throws {
+    func testContractShapeMatchesFixture() throws {
         let h = Harness()
         h.runtime.setUser("synthetic-user")
         h.send("purchase", value: 4.5, props: ["item": "coins", "amount": 2])
