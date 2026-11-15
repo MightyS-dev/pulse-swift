@@ -36,7 +36,8 @@ final class PrivacyAndConcurrencyTests: XCTestCase {
         restarted.send("ignored.after.restart"); XCTAssertTrue(restarted.transport.requests.isEmpty)
         restarted.runtime.optOut = false; restarted.settle()
         restarted.send("anonymous")
-        XCTAssertNil(restarted.events[0]["userHash"])
+        XCTAssertNotNil(restarted.events[0]["userHash"])
+        XCTAssertNotEqual(restarted.events[0]["userHash"] as? String, PulseHash.hex(""))
         XCTAssertNotEqual(event["sessionId"] as? String, restarted.events[0]["sessionId"] as? String)
     }
     func testUnreadableCorruptAndFailedPrivacyWritesFailClosed() {
@@ -91,8 +92,8 @@ final class PrivacyAndConcurrencyTests: XCTestCase {
         XCTAssertEqual(h.events[0]["sessionId"] as? String, h.events[1]["sessionId"] as? String)
         h.advance(1800); h.runtime.setUser(nil); h.send("rotated")
         XCTAssertNotEqual(h.events[1]["sessionId"] as? String, h.events[2]["sessionId"] as? String)
-        XCTAssertNil(h.events[2]["userHash"])
-        h.runtime.setUser(""); h.send("empty"); XCTAssertNil(h.events[3]["userHash"])
+        XCTAssertNotNil(h.events[2]["userHash"]); XCTAssertNotEqual(h.events[2]["userHash"] as? String, h.events[0]["userHash"] as? String)
+        h.runtime.setUser(""); h.send("empty"); XCTAssertEqual(h.events[3]["userHash"] as? String, h.events[2]["userHash"] as? String)
     }
     func testTenThreadsCaptureTenThousandSignalsWithoutLossOrDuplication() {
         var options = PulseOptions(); options.maxQueueSize = 10000; options.maxBatchSize = 1000; options.gzip = false

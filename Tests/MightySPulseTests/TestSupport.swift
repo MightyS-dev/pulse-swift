@@ -35,7 +35,7 @@ final class FakeStorage: PulseStorage {
     // The runtime writes from its serial queue while tests read from the main thread.
     private let lock = NSLock()
     private var _files: [String: Data] = [:]
-    private var _failReads = false, _failWrites = false, _failPreference = false
+    private var _failReads = false, _failWrites = false, _failPreference = false, _failInstallID = false
     private var _afterReplace: ((String) -> Void)?
     private func locked<T>(_ body: () -> T) -> T { lock.lock(); defer { lock.unlock() }; return body() }
     var files: [String: Data] {
@@ -45,13 +45,14 @@ final class FakeStorage: PulseStorage {
     var failReads: Bool { get { locked { _failReads } } set { locked { _failReads = newValue } } }
     var failWrites: Bool { get { locked { _failWrites } } set { locked { _failWrites = newValue } } }
     var failPreference: Bool { get { locked { _failPreference } } set { locked { _failPreference = newValue } } }
+    var failInstallID: Bool { get { locked { _failInstallID } } set { locked { _failInstallID = newValue } } }
     var afterReplace: ((String) -> Void)? { get { locked { _afterReplace } } set { locked { _afterReplace = newValue } } }
     func read(_ name: String) throws -> Data? {
-        if failReads { throw PulseFailure.unavailable }
+        if failReads || (failInstallID && name == "install-id") { throw PulseFailure.unavailable }
         return locked { _files[name] }
     }
     func replace(_ name: String, with data: Data) throws {
-        if failWrites || (failPreference && name == "opt-out") { throw PulseFailure.unavailable }
+        if failWrites || (failPreference && name == "opt-out") || (failInstallID && name == "install-id") { throw PulseFailure.unavailable }
         locked { _files[name] = data }
         afterReplace?(name)
     }

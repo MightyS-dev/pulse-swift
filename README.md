@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.1`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.2`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.1")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.2")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -34,8 +34,9 @@ Pulse.initialize(appKey: "YOUR_APP_KEY") // your app key from the Pulse dashboar
 Pulse.track("level.complete")
 Pulse.track("purchase", value: 4.99, props: ["sku": "gems_100", "trial": false])
 
-Pulse.setUser("your-internal-user-id") // optional
-Pulse.setUser(nil)                     // clears the user for later signals
+// Optional: use your own user id instead of the anonymous install id.
+Pulse.setUser("your-internal-user-id")
+Pulse.setUser(nil)                     // back to the anonymous install id
 
 Task { await Pulse.flush() }           // optional: waits until queued signals are delivered
 ```
@@ -52,10 +53,14 @@ product line and not a device), locale, and the SDK name and version. iPadOS is 
 
 Sessions use a random id that changes after 30 minutes of inactivity.
 
-User id: optional. If you call `setUser`, the id is hashed with SHA-256 on the device. The raw id is never stored or sent.
-The hash is pseudonymous and can link one user's signals. Without `setUser`, no user hash is sent.
+Anonymous install id: random, created by the SDK on first launch, stored only in the app's own storage, deleted with the
+app and replaced after opt-out. It is sent only as a SHA-256 hash, it is not derived from any device identifier and it is
+not shared between apps. It is what counts your users, so there is nothing to set up.
 
-Never sent: IDFA, IDFV, serial numbers, MAC addresses, device names, persistent install ids, location, contacts, email,
+User id: optional. If you call `setUser`, the id is hashed with SHA-256 on the device and replaces the install id hash.
+The raw id is never stored or sent. The hash is pseudonymous and can link one user's signals.
+
+Never sent: IDFA, IDFV, serial numbers, MAC addresses, device names, location, contacts, email,
 cookies, or the app's bundle identifier. The SDK does not use the Keychain or UserDefaults.
 
 IP address: the SDK does not read or send the device's IP address as data. As with any HTTP request, the server sees the
@@ -139,7 +144,8 @@ dropped. At most 32 props are kept (keys sorted first), with keys up to 128 and 
 within 8192 bytes serialized. Invalid signals are ignored.
 
 **Privacy manifest.** The package ships `PrivacyInfo.xcprivacy`: tracking is false, there are no tracking domains and no
-required-reason API use, and the collected data types are Product Interaction, User ID and Other Data Types, for the
-analytics purpose, linked and not used for tracking. These entries cover the optional user hash and the metadata above;
+required-reason API use, and the collected data types are Product Interaction, User ID and Other Data Types (linked, for the
+analytics purpose) and Device ID (not linked to the user's identity, for the analytics purpose), none used for tracking.
+These entries cover the user hash, the anonymous install id hash and the metadata above;
 review your app's own privacy report and App Store Connect answers, which depend on the whole app. See
 [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/).

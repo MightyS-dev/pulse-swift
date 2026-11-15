@@ -31,6 +31,7 @@ internal final class PulseRuntime {
     private var session = UUID().uuidString
     private var lastActivity = Date.distantPast
     private var userHash: String?
+    private var installHash: String?
     private var gzipDisabled = false
     private var halted = false
     private var stopped = false
@@ -75,7 +76,7 @@ internal final class PulseRuntime {
                 let current = revision == privacyRevision
                 privacyLock.unlock()
                 guard current else { return }
-                userHash = nil; session = UUID().uuidString; lastActivity = .distantPast
+                userHash = nil; installHash = nil; session = UUID().uuidString; lastActivity = .distantPast
                 beforeInitialize.removeAll(); entries.removeAll(); pending.removeAll()
                 active?.cancel(); active = nil; activeID = nil
                 preferenceDirty = newValue
@@ -124,7 +125,7 @@ internal final class PulseRuntime {
             guard !optOut, !stopped else { return }
             if capturedAt.timeIntervalSince(lastActivity) >= 1800 { session = UUID().uuidString }
             lastActivity = capturedAt
-            let input = PulseInput(timestamp: capturedAt, session: session, userHash: userHash,
+            let input = PulseInput(timestamp: capturedAt, session: session, userHash: userHash ?? anonymousHash(),
                                    type: type, value: value, props: capturedProps)
             if appKey == nil {
                 if beforeInitialize.count == 100 { beforeInitialize.removeFirst() }
@@ -134,6 +135,26 @@ internal final class PulseRuntime {
                 requestPump()
             }
         }
+    }
+    /// Hash of the random install id, used for every signal until the app calls setUser. Created once and kept in
+    /// the SDK's own storage. If the storage cannot be read or written, the id lives in memory for this process.
+    private func anonymousHash() -> String {
+        if let hash = installHash { return hash }
+        var identifier: String?
+        if let bytes = try? storage.read("install-id"), let text = String(data: bytes, encoding: .utf8), Self.isInstallID(text) {
+            identifier = text
+        }
+        if identifier == nil {
+            let fresh = (0..<16).map { _ in String(format: "%02x", UInt8.random(in: 0...255)) }.joined()
+            try? storage.replace("install-id", with: Data(fresh.utf8))
+            identifier = fresh
+        }
+        let hash = PulseHash.hex(identifier ?? "")
+        installHash = hash
+        return hash
+    }
+    private static func isInstallID(_ text: String) -> Bool {
+        text.utf8.count == 32 && text.utf8.allSatisfy { ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102) }
     }
     func setUser(_ identifier: String?) {
         state.async { [self] in
@@ -227,6 +248,8 @@ internal final class PulseRuntime {
         do {
             // Persist opt-out first. Erase the current queue before persisting opt-in.
             if desired { try storage.replace("opt-out", with: Data([1])) }
+            // The anonymous install id goes away with the queue. A new one is created at the next signal.
+            try storage.remove("install-id")
             // Invalidate every app-key queue, including queues not opened in this process.
             try storage.replace("privacy-generation", with: Data(generation.utf8))
             if let name = storageName { try storage.remove(name) }

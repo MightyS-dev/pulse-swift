@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.1"
+    static let version = "0.9.2"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.

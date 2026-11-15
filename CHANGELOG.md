@@ -4,6 +4,14 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-11-15
+
+- Users are counted without any setup: the SDK sends a random anonymous install id (hashed) until you call `setUser`.
+  The id is created on first launch, stored only in the app's own storage, deleted with the app and replaced after opt-out.
+- `setUser` stays optional and replaces the install id hash; `setUser(nil)` returns to it.
+- The bundled privacy manifest now lists Device ID (not linked to the user's identity, not used for tracking, analytics).
+- The app version falls back to the build number (`CFBundleVersion`) when the bundle has no marketing version.
+
 ## [0.9.1] - 2026-11-15
 
 - README: a Test mode section that explains how signals are marked as test or real.

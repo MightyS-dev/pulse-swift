@@ -115,6 +115,15 @@ internal enum PulseEnvironment {
         #endif
     }
     /// One format for every Pulse SDK: major.minor, with the patch number only when it is not zero.
+    /// The marketing version, or the build number when the bundle has no marketing version.
+    static func appVersionText(shortVersion: String?, buildNumber: String?) -> String {
+        for candidate in [shortVersion, buildNumber] {
+            let trimmed = candidate?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty { return trimmed }
+        }
+        return ""
+    }
+
     static func versionText(major: Int, minor: Int, patch: Int) -> String {
         patch > 0 ? "\(major).\(minor).\(patch)" : "\(major).\(minor)"
     }
@@ -136,7 +145,9 @@ internal enum PulseEnvironment {
         let os = ProcessInfo.processInfo.operatingSystemVersion
         return ["platform": platform, "osName": osName,
                 "osVersion": versionText(major: os.majorVersion, minor: os.minorVersion, patch: os.patchVersion),
-                "appVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+                "appVersion": appVersionText(
+                    shortVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+                    buildNumber: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String),
                 "appBuildNumber": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
                 "deviceModel": model, "locale": Locale.current.identifier.replacingOccurrences(of: "_", with: "-")]
     }

@@ -106,6 +106,12 @@ final class SerializationTests: XCTestCase {
         XCTAssertFalse(live.isEmpty)
         XCTAssertNotEqual(live, ProcessInfo.processInfo.hostName)
     }
+    func testAppVersionFallsBackToBuildNumberWhenShortVersionIsMissing() {
+        XCTAssertEqual(PulseEnvironment.appVersionText(shortVersion: "1.2.3", buildNumber: "45"), "1.2.3")
+        XCTAssertEqual(PulseEnvironment.appVersionText(shortVersion: nil, buildNumber: "45"), "45")
+        XCTAssertEqual(PulseEnvironment.appVersionText(shortVersion: "  ", buildNumber: "45"), "45")
+        XCTAssertEqual(PulseEnvironment.appVersionText(shortVersion: nil, buildNumber: nil), "")
+    }
     func testOSVersionIsMajorMinorWithPatchOnlyWhenNotZero() {
         XCTAssertEqual(PulseEnvironment.versionText(major: 26, minor: 5, patch: 0), "26.5")
         XCTAssertEqual(PulseEnvironment.versionText(major: 18, minor: 6, patch: 1), "18.6.1")
