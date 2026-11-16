@@ -207,6 +207,41 @@ final class UsageAndSignalTests: XCTestCase {
         buildOnly.send("z")
         XCTAssertEqual((named(buildOnly, "pulse.app_updated")[0]["props"] as? [String: String])?["previousBuild"], "42")
     }
+    func testRestartInsideIdleWindowWithNewVersionSendsExactlyOneAppUpdated() {
+        let first = Harness(automatic: true)
+        first.send("a")
+        XCTAssertEqual(named(first, "pulse.app_updated").count, 0)
+        let upgraded = Harness(storage: first.storage, clock: first.clock.fork(advancing: 60), automatic: true, version: "1.3.0", build: "50")
+        upgraded.send("b"); upgraded.send("c")
+        XCTAssertEqual(named(upgraded, "pulse.app_updated").count, 1)
+        XCTAssertEqual(named(upgraded, "pulse.app_updated")[0]["props"] as? [String: String], ["previousVersion": "1.2.3", "previousBuild": "42"])
+        let again = Harness(storage: first.storage, clock: first.clock.fork(advancing: 120), automatic: true, version: "1.3.0", build: "50")
+        again.send("d")
+        XCTAssertEqual(named(again, "pulse.app_updated").count, 0)
+    }
+    func testStoredVersionIsNotUpdatedWhileAutomaticSignalsAreOff() {
+        let first = Harness(automatic: true)
+        first.send("a")
+        let off = Harness(storage: first.storage, clock: first.clock.fork(advancing: 60), automatic: false, version: "1.3.0", build: "50")
+        off.send("b")
+        XCTAssertEqual(named(off, "pulse.app_updated").count, 0)
+        let on = Harness(storage: first.storage, clock: first.clock.fork(advancing: 120), automatic: true, version: "1.3.0", build: "50")
+        on.send("c")
+        XCTAssertEqual(named(on, "pulse.app_updated").count, 1)
+    }
+    func testStoredVersionIsKeptWhilePortalDisablesAppUpdated() {
+        let first = Harness(automatic: true)
+        first.send("a")
+        let storage = first.storage
+        storage.files["config"] = Data("{\"version\":1,\"disabledSignals\":[\"pulse.app_updated\"]}".utf8)
+        let off = Harness(storage: storage, clock: first.clock.fork(advancing: 60), automatic: true, version: "1.3.0", build: "50")
+        off.send("b")
+        XCTAssertEqual(named(off, "pulse.app_updated").count, 0)
+        storage.files["config"] = nil
+        let on = Harness(storage: storage, clock: first.clock.fork(advancing: 120), automatic: true, version: "1.3.0", build: "50")
+        on.send("c")
+        XCTAssertEqual(named(on, "pulse.app_updated").count, 1)
+    }
     func testOptOutSuppressesAutomaticSignals() {
         let h = Harness(automatic: true)
         h.runtime.optOut = true; h.settle()

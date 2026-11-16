@@ -13,6 +13,9 @@ internal final class PulseRuntime {
     private let random: () -> Double
     private let device: PulseDeviceSource
     private let automatic: Bool
+    private let fetchesConfig: Bool
+    private var effective = PulseEffectiveConfig.allOn
+    private var configEndpoint: URL?
     private let zone: () -> TimeZone
     private let usage: PulseUsageTracker
     private var installCreated = false
@@ -36,8 +39,11 @@ internal final class PulseRuntime {
     private var storageRetryAt = Date.distantPast
     private var session = UUID().uuidString
     private var lastActivity = Date.distantPast
+    /// Whole milliseconds since 1970 of the latest capture timestamp handed out in this process.
+    private var lastStampMillis = Int64.min
     private var userHash: String?
     private var installHash: String?
+    private var lastScreen: String?
     private var gzipDisabled = false
     private var halted = false
     private var stopped = false
@@ -50,11 +56,11 @@ internal final class PulseRuntime {
 
     init(clock: PulseClock, transport: PulseTransport, storage: PulseStorage,
          environment: @escaping () -> [String: String], random: @escaping () -> Double = { Double.random(in: 0..<1) },
-         device: PulseDeviceSource = PulseNoDevice(), automatic: Bool = true,
+         device: PulseDeviceSource = PulseNoDevice(), automatic: Bool = true, fetchesConfig: Bool = false,
          zone: @escaping () -> TimeZone = { TimeZone.autoupdatingCurrent }) {
         self.clock = clock; self.transport = transport; self.storage = storage
         self.environment = environment; self.random = random
-        self.device = device; self.automatic = automatic; self.zone = zone
+        self.device = device; self.automatic = automatic; self.fetchesConfig = fetchesConfig; self.zone = zone
         self.usage = PulseUsageTracker(storage: storage, zone: zone)
         do {
             privacyValue = Self.storedOptOut(try storage.read("opt-out"))
@@ -86,7 +92,7 @@ internal final class PulseRuntime {
                 let current = revision == privacyRevision
                 privacyLock.unlock()
                 guard current else { return }
-                userHash = nil; installHash = nil; session = UUID().uuidString; lastActivity = .distantPast
+                userHash = nil; installHash = nil; lastScreen = nil; session = UUID().uuidString; lastActivity = .distantPast
                 usage.reset(); installCreated = false
                 beforeInitialize.removeAll(); entries.removeAll(); pending.removeAll()
                 active?.cancel(); active = nil; activeID = nil
@@ -100,7 +106,9 @@ internal final class PulseRuntime {
         }
     }
 
-    func initialize(appKey key: String, options requested: PulseOptions) {
+    /// `resolved` runs on the state queue once the settings for this run are known, with whether the automatic
+    /// screen capture should be installed.
+    func initialize(appKey key: String, options requested: PulseOptions, resolved: @escaping (Bool) -> Void = { _ in }) {
         state.async { [self] in
             guard appKey == nil, !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   !key.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else { return }
@@ -109,22 +117,55 @@ internal final class PulseRuntime {
                   url.scheme == "https" || url.scheme == "http", url.host != nil,
                   url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return }
             url.path = url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            url.path = "/" + (url.path.isEmpty ? "" : url.path + "/") + "api/v1/signals"
+            let prefix = "/" + (url.path.isEmpty ? "" : url.path + "/") + "api/v1/"
+            url.path = prefix + "signals"
             guard let address = url.url else { return }
+            url.path = prefix + "config"
+            configEndpoint = url.url
             options = normalized; appKey = key; endpoint = address
             storageName = "queue-" + PulseHash.hex(key) + ".bin"
             interval = normalized.flushIntervalSeconds; nextFlush = clock.now
             system = (bootEnvironment ?? environment()).mapValues { String(decoding: $0.utf8.prefix(256), as: UTF8.self) }
             system = system.filter { !$0.value.isEmpty }
+            let cached = loadCachedConfig()
+            effective = PulseEffectiveConfig(options: normalized, remote: cached ?? .allOn)
+            resolved(effective.capturesScreens)
             device.start()
             device.awaitReady(timeout: 0.25)
             system["sdkName"] = PulseInfo.sdkName; system["sdkVersion"] = PulseInfo.version
             if let version = normalized.appVersion { system["appVersion"] = String(decoding: version.utf8.prefix(256), as: UTF8.self) }
             requestPump()
+            fetchConfig(etag: cached?.etag)
         }
     }
 
+    /// The settings saved by an earlier launch. Missing, unreadable or damaged means everything is on.
+    private func loadCachedConfig() -> PulseRemoteConfig? {
+        guard !optOut, let bytes = try? storage.read(PulseRemoteConfig.fileName) else { return nil }
+        return PulseRemoteConfig.parse(bytes)
+    }
+    /// One background request per launch. It never touches the delivery queue and is never retried; whatever it
+    /// returns is saved and applies from the next launch.
+    private func fetchConfig(etag: String?) {
+        guard fetchesConfig, !optOut, let url = configEndpoint, let key = appKey else { return }
+        var request = PulseRequest(url: url, appKey: key, body: Data(), gzip: false)
+        request.method = "GET"; request.ifNoneMatch = etag; request.timeout = 10
+        _ = transport.send(request) { [weak self] response in
+            guard let self = self else { return }
+            self.state.async { self.receivedConfig(response) }
+        }
+    }
+    private func receivedConfig(_ response: PulseResponse) {
+        guard response.status == 200, !optOut, !stopped, PulseRemoteConfig.parse(response.body) != nil else { return }
+        try? storage.replace(PulseRemoteConfig.fileName, with: response.body)
+    }
+
     func track(_ type: String, value: Double? = nil, props: [String: Any]? = nil) {
+        capture(type, value: value, props: props, screen: nil)
+    }
+    /// The one capture path for every signal. The timestamp is taken here, at the call, and the work runs as a single
+    /// block on the state queue, so signals keep call order and share batches whatever their type.
+    private func capture(_ type: String, value: Double?, props: [String: Any]?, screen screenName: String?) {
         // Copy and sanitize before crossing the queue boundary, excluding mutable/nested caller objects.
         var safe: [String: Any] = [:]
         for (key, item) in props ?? [:] {
@@ -137,6 +178,14 @@ internal final class PulseRuntime {
         let capturedAt = clock.now
         state.async { [self] in
             guard !optOut, !stopped else { return }
+            var capturedProps = capturedProps
+            if let name = screenName {
+                // The same screen again, with no other screen in between, is not a new screen view.
+                guard name != lastScreen else { return }
+                capturedProps = ["screen": name]
+                if let previous = lastScreen { capturedProps["previousScreen"] = previous }
+                lastScreen = name
+            }
             let anonymous = anonymousHash()
             let hash = userHash ?? anonymous
             var started = false
@@ -145,7 +194,7 @@ internal final class PulseRuntime {
             var inputs: [PulseInput] = []
             if started {
                 let version = currentVersion()
-                let begun = usage.startSession(now: capturedAt, version: version.0, build: version.1, isNewInstall: installCreated)
+                let begun = usage.startSession(now: capturedAt, version: version.0, build: version.1, isNewInstall: installCreated, emitsUpdate: automatic && effective.sends("pulse.app_updated"))
                 let fresh = installCreated
                 installCreated = false
                 if automatic {
@@ -159,15 +208,31 @@ internal final class PulseRuntime {
             } else { usage.touch(now: capturedAt) }
             inputs.append(PulseInput(timestamp: capturedAt, session: session, userHash: hash, type: type, value: value,
                                      props: capturedProps, extra: extraFields(at: capturedAt)))
-            for input in inputs { accept(input) }
+            for var input in inputs {
+                input.timestamp = nextStamp(after: capturedAt)
+                input.extra = extraFields(at: input.timestamp)
+                accept(input)
+            }
             if appKey != nil { requestPump() }
         }
+    }
+    /// Records one screen appearance exactly like `track`: same queue, same call-time timestamp, same batches.
+    func screen(_ raw: String) {
+        guard let name = PulseScreenNames.clean(raw) else { return }
+        capture("pulse.screen_view", value: nil, props: nil, screen: name)
     }
     private func accept(_ input: PulseInput) {
         if appKey == nil {
             if beforeInitialize.count == 100 { beforeInitialize.removeFirst() }
             beforeInitialize.append(input)
         } else { append(input) }
+    }
+    /// Strictly increasing capture timestamps at millisecond resolution: the later of the clock reading and the
+    /// previous timestamp plus one millisecond. Runs on the state queue, so it follows capture order.
+    private func nextStamp(after reading: Date) -> Date {
+        let now = Int64((reading.timeIntervalSince1970 * 1000).rounded(.down))
+        lastStampMillis = lastStampMillis == Int64.min ? now : max(now, lastStampMillis + 1)
+        return Date(timeIntervalSince1970: (Double(lastStampMillis) + 0.25) / 1000)
     }
     private func automaticInput(_ type: String, at date: Date, hash: String, props: [String: Any]) -> PulseInput {
         PulseInput(timestamp: date, session: session, userHash: hash, type: type, value: nil, props: props, extra: extraFields(at: date))
@@ -224,6 +289,8 @@ internal final class PulseRuntime {
     }
     // Test synchronization only. Public operations never call sync on this queue.
     func barrier() { state.sync {} }
+    /// Keeps the state queue busy until `gate` is signalled.
+    func pauseQueue(until gate: DispatchSemaphore) { state.async { gate.wait() } }
     var countForTests: Int { state.sync { entries.count } }
     var waiterCountForTests: Int { state.sync { waiters.count } }
 
@@ -258,8 +325,10 @@ internal final class PulseRuntime {
     }
 
     private func append(_ input: PulseInput) {
+        guard effective.sends(input.type) else { return }
         var context = system.merging(device.snapshot()) { _, live in live }
         context.merge(input.extra) { _, extra in extra }
+        for key in effective.removedKeys { context.removeValue(forKey: key) }
         guard let json = PulseJSON.signal(input, system: context.filter { !$0.value.isEmpty }, debug: options.debug) else {
             warn("Invalid signal ignored."); return
         }
@@ -302,6 +371,7 @@ internal final class PulseRuntime {
             // The anonymous install id goes away with the queue. A new one is created at the next signal.
             try storage.remove("install-id")
             try storage.remove(PulseUsageTracker.fileName)
+            try storage.remove(PulseRemoteConfig.fileName)
             // Invalidate every app-key queue, including queues not opened in this process.
             try storage.replace("privacy-generation", with: Data(generation.utf8))
             if let name = storageName { try storage.remove(name) }

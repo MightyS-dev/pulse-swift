@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.3`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.4`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.3")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.4")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -89,6 +89,28 @@ connection address, uses it only to derive a two-letter country code and does no
 
 Do not put personal information in signal names, values, properties or the app version.
 
+## Screen views
+
+On iOS, iPadOS, tvOS and Mac Catalyst (UIKit) the SDK sends a `pulse.screen_view` signal each time a screen appears, with
+no code in your screens. Props: `screen` (the view controller's class name without the module prefix, at most 128
+characters) and `previousScreen` when known. Never a URL, a title, text from the screen or anything the user typed.
+Navigation, tab bar, page and split view controllers, SwiftUI hosting wrappers, controllers embedded inside another
+screen and system controllers (alerts, keyboards, pickers) are skipped. The same screen appearing again with no other
+screen in between is not repeated. It follows opt-out and the debug flag like any signal and counts toward volume.
+
+The capture replaces `viewDidAppear` once, at `Pulse.initialize`, and calls the original first. To switch it off set
+`options.automaticScreenViews = false`: nothing is installed at all.
+
+SwiftUI has no reliable automatic hook, so name each screen with one modifier:
+
+```swift
+ContentView().pulseScreen("Home")
+```
+
+For any other screen, call `Pulse.screen("Name")` yourself. Both calls work whether or not the automatic capture is on.
+macOS (AppKit) apps and watchOS apps have no automatic capture: use the manual calls. The SDK does not touch UIKit in
+command line tools or on platforms without it.
+
 ## Options
 
 ```swift
@@ -107,7 +129,18 @@ Pulse.initialize(appKey: "YOUR_APP_KEY", options: options)
 | `maxQueueAgeDays` | 7 | Days a queued signal is kept. Capped at 29. |
 | `gzip` | true | Compresses bodies larger than 1024 bytes. |
 | `debug` | true in a Debug build, false in a Release build | Marks signals as test data and prints short diagnostics, never signal contents. See [Test mode](#test-mode). |
+| `automaticScreenViews` | true | Sends `pulse.screen_view` automatically on UIKit. See [Screen views](#screen-views). |
+| `automaticSignals` | true | `false` stops `pulse.session_started`, `pulse.new_install` and `pulse.app_updated`. See [Settings from the portal](#settings-from-the-portal). |
 | `appVersion` | bundle short version | Overrides the app version. |
+
+## Settings from the portal
+
+The dashboard can switch screen views, the automatic signals and groups of fields (device, screen, settings, network, app, usage) on or off for your app, without a package update. The SDK reads these settings once per launch, in the background, and keeps them in its own storage. A change applies from the next launch of the app and stays the same for the whole run.
+
+- Everything is on by default, and stays on whenever the settings cannot be read (offline, an error, nothing saved yet).
+- The dashboard decides. In code you can only switch things off: `automaticScreenViews = false` stops the automatic screen hook (manual `Pulse.screen` still sends), `automaticSignals = false` stops the session, new install and app updated signals. Setting either to `true` never overrides a switch made in the dashboard.
+- Fields that are switched off are left out of every signal. The base fields (platform, OS, app version, build, device model, locale, SDK and bundle identifier) are always sent.
+- The request carries only your app key. It never delays `track` or `flush`, and opt-out deletes the saved settings with everything else.
 
 ## Test mode
 

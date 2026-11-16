@@ -102,7 +102,7 @@ internal final class PulseFileStorage: PulseStorage {
         do {
             let handle = try FileHandle(forReadingFrom: directory.appendingPathComponent(name))
             defer { try? handle.close() }
-            let limit = name == "opt-out" ? 2 : (name == "privacy-generation" ? 37 : name == "install-id" ? 33 : name == "usage" ? 262145 : 256 * 1024 * 1024 + 1)
+            let limit = name == "opt-out" ? 2 : (name == "privacy-generation" ? 37 : name == "install-id" ? 33 : name == "usage" ? 262145 : name == PulseRemoteConfig.fileName ? PulseRemoteConfig.maxBytes + 1 : 256 * 1024 * 1024 + 1)
             var result = Data()
             while result.count < limit {
                 guard let chunk = try handle.read(upToCount: min(1048576, limit - result.count)), !chunk.isEmpty else { break }

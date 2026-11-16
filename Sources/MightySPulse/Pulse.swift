@@ -17,8 +17,9 @@ import Foundation
 public enum Pulse {
     private static let runtime = PulseRuntime(clock: PulseSystemClock(), transport: PulseURLTransport(),
                                              storage: PulseFileStorage.standard(), environment: PulseEnvironment.system,
-                                             device: PulseLiveDevice())
+                                             device: PulseLiveDevice(), fetchesConfig: true)
     private static let lifecycle = PulseLifecycle(runtime: runtime)
+    private static let screens = PulseScreenInstaller { [runtime] in PulseScreenHook.install { runtime.screen($0) } }
 
     /// Starts the SDK. Call it once, early in app startup. Later calls are ignored.
     ///
@@ -30,8 +31,15 @@ public enum Pulse {
     ///   - options: Delivery and environment settings. See ``PulseOptions``.
     public static func initialize(appKey: String, options: PulseOptions = PulseOptions()) {
         _ = lifecycle
-        runtime.initialize(appKey: appKey, options: options)
+        runtime.initialize(appKey: appKey, options: options) { [screens] enabled in screens.activate(enabled: enabled) }
     }
+    /// Records that the user is now looking at the screen called `name`.
+    ///
+    /// Sends a `pulse.screen_view` signal with the screen name and, when known, the previous screen name. Use it
+    /// for screens the SDK cannot see by itself. The name is trimmed and cut to 128 characters; never put a
+    /// URL, a title typed by the user or any personal text in it. The same name twice in a row is sent once.
+    /// Safe to call from any thread; it returns at once and respects ``optOut``.
+    public static func screen(_ name: String) { runtime.screen(name) }
     /// Records one named signal (event). Safe to call from any thread; it returns at once and never throws.
     ///
     /// Invalid signals are ignored. Do not put personal information in the name, value or props.

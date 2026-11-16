@@ -94,12 +94,12 @@ final class Harness {
     init(options: PulseOptions = PulseOptions(), storage: FakeStorage = FakeStorage(),
          clock: FakeClock = FakeClock(), key: String = "synthetic-key", initialize: Bool = true,
          random: @escaping () -> Double = { 0.5 }, device: PulseDeviceSource = PulseNoDevice(),
-         automatic: Bool = false, version: String = "1.2.3", build: String = "42") {
+         automatic: Bool = false, fetchesConfig: Bool = false, version: String = "1.2.3", build: String = "42") {
         self.storage = storage; self.clock = clock
         runtime = PulseRuntime(clock: clock, transport: transport, storage: storage, environment: {
             ["platform": "mobile", "osName": "iOS", "osVersion": "18.0.0", "appVersion": version,
              "appBuildNumber": build, "deviceModel": "Apple mobile device", "locale": "sr-RS"]
-        }, random: random, device: device, automatic: automatic, zone: { TimeZone(identifier: "UTC")! })
+        }, random: random, device: device, automatic: automatic, fetchesConfig: fetchesConfig, zone: { TimeZone(identifier: "UTC")! })
         if initialize { runtime.initialize(appKey: key, options: options); settle() }
     }
     func settle(_ passes: Int = 64) { for _ in 0..<passes { runtime.barrier() } }

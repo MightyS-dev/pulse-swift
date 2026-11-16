@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.3"
+    static let version = "0.9.4"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -30,6 +30,19 @@ public struct PulseOptions {
     public var gzip = true
     /// Marks signals as test data and enables fixed diagnostic messages. Defaults to `true` in debug builds and `false` in release builds.
     public var debug: Bool = _isDebugAssertConfiguration()
+    /// Sends a `pulse.screen_view` signal whenever a UIKit screen appears, with no code in your screens. Default `true`.
+    ///
+    /// The screen name is the view controller's class name. Containers (navigation, tab bar, page and split view
+    /// controllers), SwiftUI hosting wrappers and system controllers are skipped. Set it to `false` to install no
+    /// automatic capture at all (the dashboard can also switch it off, and `true` never overrides it); ``Pulse/screen(_:)`` and the SwiftUI `pulseScreen(_:)` modifier still work.
+    /// On macOS (AppKit) nothing is captured automatically; use the manual calls.
+    public var automaticScreenViews = true
+    /// Sends the automatic signals `pulse.session_started`, `pulse.new_install`, `pulse.app_updated` and
+    /// `pulse.screen_view`. Default `true`.
+    ///
+    /// The dashboard's setting decides (everything is on when it cannot be read). `false` here switches the
+    /// session, new install and app updated signals off whatever the dashboard says; `true` never overrides the dashboard.
+    public var automaticSignals = true
     /// Overrides the app version taken from the bundle. Default `nil`.
     public var appVersion: String?
     /// Creates options with the default values.
@@ -55,6 +68,9 @@ internal struct PulseRequest {
     let appKey: String
     let body: Data
     let gzip: Bool
+    var method = "POST"
+    var ifNoneMatch: String?
+    var timeout: TimeInterval?
 }
 internal struct PulseResponse {
     var status: Int
@@ -73,7 +89,7 @@ internal protocol PulseStorage: AnyObject {
 internal enum PulseFailure: Error { case corrupt, unavailable }
 
 internal struct PulseInput {
-    let timestamp: Date
+    var timestamp: Date
     let session: String
     let userHash: String?
     let type: String

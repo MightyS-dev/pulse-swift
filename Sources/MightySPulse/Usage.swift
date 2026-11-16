@@ -55,7 +55,8 @@ internal final class PulseUsageTracker {
     }
 
     /// Call when a new session id is created. `isNewInstall` is true when the install id was created just now.
-    func startSession(now: Date, version: String, build: String, isNewInstall: Bool) -> Started {
+    func startSession(now: Date, version: String, build: String, isNewInstall: Bool,
+                      emitsUpdate: Bool = true) -> Started {
         load()
         let calendar = calendar(), today = dateText(now, calendar)
         var value = usage ?? PulseUsage(firstSessionDate: today, firstSessionIsNewInstall: isNewInstall, totalSessionsCount: 0,
@@ -68,9 +69,8 @@ internal final class PulseUsageTracker {
         }
         var started = Started(appUpdated: nil)
         if let oldVersion = value.appVersion, let oldBuild = value.appBuildNumber, oldVersion != version || oldBuild != build {
-            started.appUpdated = (oldVersion, oldBuild)
-        }
-        value.appVersion = version; value.appBuildNumber = build
+            if emitsUpdate { started.appUpdated = (oldVersion, oldBuild); value.appVersion = version; value.appBuildNumber = build }
+        } else { value.appVersion = version; value.appBuildNumber = build }
         value.totalSessionsCount += 1
         if !value.days.contains(today) { value.days.append(today); value.distinctDays += 1 }
         let recent = dateText(calendar.date(byAdding: .day, value: -29, to: now) ?? now, calendar)

@@ -45,10 +45,12 @@ internal final class PulseURLTransport: NSObject, PulseTransport, URLSessionData
     }()
     func send(_ input: PulseRequest, completion: @escaping (PulseResponse) -> Void) -> PulseCancellation {
         var request = URLRequest(url: input.url)
-        request.httpMethod = "POST"; request.httpBody = input.body
-        request.timeoutInterval = min(90, 10 + Double(input.body.count / 16384))
+        request.httpMethod = input.method
+        if input.method == "POST" { request.httpBody = input.body }
+        request.timeoutInterval = input.timeout ?? min(90, 10 + Double(input.body.count / 16384))
+        if let tag = input.ifNoneMatch { request.setValue(tag, forHTTPHeaderField: "If-None-Match") }
         request.setValue(input.appKey, forHTTPHeaderField: "X-App-Key")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if input.method == "POST" { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         // Avoid Foundation's default application/device User-Agent metadata.
         request.setValue(PulseInfo.sdkName + "/" + PulseInfo.version, forHTTPHeaderField: "User-Agent")
         if input.gzip { request.setValue("gzip", forHTTPHeaderField: "Content-Encoding") }
