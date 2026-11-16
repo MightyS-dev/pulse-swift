@@ -178,6 +178,8 @@ internal final class PulseRuntime {
         let capturedAt = clock.now
         state.async { [self] in
             guard !optOut, !stopped else { return }
+            // A signal that is not valid is dropped before it can start or extend a session.
+            guard PulseJSON.isValid(type: type, value: value) else { warn("Invalid signal ignored."); return }
             var capturedProps = capturedProps
             if let name = screenName {
                 // The same screen again, with no other screen in between, is not a new screen view.

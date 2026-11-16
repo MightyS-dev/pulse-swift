@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.5"
+    static let version = "0.9.6"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -105,9 +105,12 @@ internal enum PulseJSON {
     static func encode(_ object: Any) throws -> Data {
         try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .fragmentsAllowed])
     }
+    /// A signal needs a type with some text in it (at most 200 characters) and a finite value, if it has one.
+    static func isValid(type: String, value: Double?) -> Bool {
+        !type.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && type.utf16.count <= 200 && value?.isFinite != false
+    }
     static func signal(_ input: PulseInput, system: [String: String], debug: Bool) -> Data? {
-        guard !input.type.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              input.type.utf16.count <= 200, input.value?.isFinite != false else { return nil }
+        guard isValid(type: input.type, value: input.value) else { return nil }
         var props: [String: Any] = [:]
         // Swift Dictionary has no insertion-order contract. Sort to make local retention deterministic.
         for key in input.props.keys.sorted() {

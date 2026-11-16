@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.5`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.6`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.5")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.6")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
