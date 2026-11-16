@@ -53,6 +53,7 @@ internal final class PulseURLTransport: NSObject, PulseTransport, URLSessionData
         if input.method == "POST" { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         // Avoid Foundation's default application/device User-Agent metadata.
         request.setValue(PulseInfo.sdkName + "/" + PulseInfo.version, forHTTPHeaderField: "User-Agent")
+        if let batch = input.batchId { request.setValue(batch, forHTTPHeaderField: "X-Pulse-Batch") }
         if input.gzip { request.setValue("gzip", forHTTPHeaderField: "Content-Encoding") }
         let task = session.dataTask(with: request)
         lock.lock(); tasks[task.taskIdentifier] = ResponseState(completion: completion); lock.unlock()

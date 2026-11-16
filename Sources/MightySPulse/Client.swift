@@ -459,7 +459,7 @@ internal final class PulseRuntime {
         guard !privacyValue else { privacyLock.unlock(); return }
         let token = UUID(), batch = pending[0]
         activeID = token
-        active = transport.send(PulseRequest(url: url, appKey: key, body: batch.wire, gzip: batch.gzip)) { [weak self] response in
+        active = transport.send(PulseRequest(url: url, appKey: key, body: batch.wire, gzip: batch.gzip, batchId: batch.batchId)) { [weak self] response in
             guard let self = self else { return }
             self.state.async { self.received(response, token: token) }
         }

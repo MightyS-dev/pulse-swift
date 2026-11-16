@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.4`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.5`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.4")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.5")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -161,6 +161,7 @@ options.debug = true // force test data
 - Network errors and server errors (408, 425, 429, 5xx) are retried with exponential backoff from 1 second to 5 minutes.
   `Retry-After` is honoured up to one hour. When the server asks for a pause or a different interval, the SDK follows it.
   A 401 keeps the queue and stops sending until the app restarts.
+- Each batch carries an id, so a batch sent again after a lost answer is stored only once.
 - Delivery is at least once: after a crash a batch can be sent again. If the OS ends the app abruptly, the last signals
   may be lost. On watchOS, call `flush()` from your own lifecycle code when it matters.
 - `flush()` returns once the signals captured so far have left the queue. It respects retry and pause deadlines, can wait

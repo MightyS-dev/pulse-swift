@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.4"
+    static let version = "0.9.5"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -71,6 +71,7 @@ internal struct PulseRequest {
     var method = "POST"
     var ifNoneMatch: String?
     var timeout: TimeInterval?
+    var batchId: String?
 }
 internal struct PulseResponse {
     var status: Int

@@ -4,6 +4,10 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-11-16
+
+- A batch that is sent again after a lost answer is stored only once.
+
 ## [0.9.4] - 2026-11-16
 
 - Settings from the portal: once per launch the SDK reads the app's settings in the background and applies them from the next launch. The dashboard can switch screen views, the automatic signals, single signal types and groups of fields on or off. Everything stays on when the settings cannot be read.

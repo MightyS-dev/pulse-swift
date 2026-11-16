@@ -24,6 +24,16 @@ internal struct PulseEntry: Codable {
     var timestamp: Date
     var json: Data
 }
+/// Identifies one batch for its whole life, so a batch sent again after a lost answer can be recognised.
+internal enum PulseBatchID {
+    static func make() -> String {
+        var generator = SystemRandomNumberGenerator()
+        return (0..<16).map { _ in String(format: "%02x", UInt8.random(in: 0...255, using: &generator)) }.joined()
+    }
+    static func isValid(_ text: String) -> Bool {
+        text.utf8.count == 32 && text.utf8.allSatisfy { ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102) }
+    }
+}
 internal struct PulseBatch: Codable {
     var ids: [UUID]
     var json: Data
@@ -31,6 +41,24 @@ internal struct PulseBatch: Codable {
     var gzip: Bool
     var failures = 0
     var retryAt = Date.distantPast
+    var batchId = PulseBatchID.make()
+
+    init(ids: [UUID], json: Data, wire: Data, gzip: Bool) {
+        self.ids = ids; self.json = json; self.wire = wire; self.gzip = gzip
+    }
+    private enum CodingKeys: String, CodingKey { case ids, json, wire, gzip, failures, retryAt, batchId }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        ids = try values.decode([UUID].self, forKey: .ids)
+        json = try values.decode(Data.self, forKey: .json)
+        wire = try values.decode(Data.self, forKey: .wire)
+        gzip = try values.decode(Bool.self, forKey: .gzip)
+        failures = try values.decodeIfPresent(Int.self, forKey: .failures) ?? 0
+        retryAt = try values.decodeIfPresent(Date.self, forKey: .retryAt) ?? Date.distantPast
+        // A saved batch without a usable id (older file) gets a new one: its content is already fixed.
+        let saved = try values.decodeIfPresent(String.self, forKey: .batchId)
+        batchId = saved.flatMap { PulseBatchID.isValid($0) ? $0 : nil } ?? PulseBatchID.make()
+    }
 }
 internal struct PulseSnapshot: Codable {
     var version = 1
