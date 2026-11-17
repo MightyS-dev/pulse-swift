@@ -4,6 +4,46 @@ All notable changes to this package are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the package follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-11-16
+
+- The built-in update and maintenance screens are not counted as app screens or taps.
+- Crashes are recorded with no setup: an uncaught Objective-C exception or a fatal signal (SIGABRT, SIGSEGV, SIGBUS,
+  SIGILL, SIGFPE, SIGTRAP) writes a small file, and the next launch sends it as one `pulse.error` signal of kind `crash`
+  with the crash's own time. The crash is then passed on, so the system crash report and any other handler still see it.
+- New `Pulse.trackError(_:props:)` for errors you catch: sends the error type, its message and the call stack at the call
+  as a `pulse.error` signal of kind `handled`.
+- Messages and frames are filtered on the device: emails, URL query strings and fragments, UUIDs, IP addresses, runs of
+  six or more digits and directories of absolute paths are removed.
+- New options `captureErrors` (default `true`; `false` installs no handler) and `errorDetail` (`.full` or `.typeOnly`).
+- At most 10 error signals of one type are sent per session. Opt-out stops recording and deletes a crash that was not
+  sent yet.
+- A crash right after start is now kept and sent on the next launch.
+- Automatic events: `pulse.app_opened` and `pulse.app_backgrounded` (off until the dashboard lists them in `enabledSignals`),
+  `pulse.deep_link` (new `Pulse.deepLink(_:)`), `pulse.permission_changed`, `previousScreenSeconds` on screen views, and
+  the system keys `launchMs`, `foregroundsToday`, `previousForegroundSeconds`, `notificationPermission` and
+  `trackingPermission` (status read only, never requested, never the advertising identifier).
+- Quota guards: per session 20 opened, 20 backgrounded, 10 deep links, 5 permission changes, 100 screen views; 300 automatic
+  signals per day. Dropped ones are counted and sent once as `droppedAutomatic`. The dashboard can pause types
+  (`pausedSignals`).
+- Why the app ended: on iOS 14+ and macOS 12+ MetricKit hang, crash, CPU and disk write diagnostics are sent as `pulse.error`
+  of kind `exit` (at most 10 per launch, none older than 7 days, never twice).
+- Heatmaps of taps and clicks (`pulse.heatmap`), off until the portal switches them on. A passive gesture recognizer on the
+  key windows on iOS and a local mouse-up monitor on macOS (no swizzling, never consumes or delays an event; tvOS and
+  watchOS capture nothing). Only the screen name, position, kind, width bucket and orientation are sent, at most 200 points
+  per signal and 1000 per session; never while the keyboard is visible, on text inputs and secure fields, in the keyboard
+  window, or on views marked with `Pulse.heatmapIgnore(_:)` or `.pulseHeatmapIgnore()`. New option `captureHeatmaps`
+  (default `true`, can only switch off).
+- App Control: update, block and maintenance rules set in the dashboard. After `Pulse.initialize` the SDK reads them in the
+  background (never blocking, 3 s and 5 s limits, no retry loop, no identity sent, also when analytics is off) and shows its
+  own screens in a window above the app: full screen for a required update, a blocked version and maintenance, an alert for a
+  suggested update, a card for announcements and what's new, a strip for upcoming maintenance. New option
+  `PulseOptions.control` (`.automatic` default, `.manual`, `.off`) and `Pulse.control` with `state`, `notices`, `onChange`,
+  `checkNow()`, `openStore()` and `dismiss()`. Fails open: the last known state stays on any error, locking rules older than
+  30 days in the cache are ignored, and a required update becomes a suggestion when there is no way to update. 12 languages,
+  Dynamic Type, VoiceOver, light and dark. Never closes the app. No new dependency or asset.
+- Debug screenshot for the portal picture: only with the new option `heatmapScreenshots = true` on an install source that is
+  not the App Store or TestFlight; one picture per screen, size class, orientation and app version, at most 20 an hour.
+
 ## [0.9.6] - 2026-11-16
 
 - A signal that is dropped because its name or value is not valid no longer starts a session or keeps one alive.

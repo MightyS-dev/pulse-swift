@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.6`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.7`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.6")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.7")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -132,6 +132,163 @@ Pulse.initialize(appKey: "YOUR_APP_KEY", options: options)
 | `automaticScreenViews` | true | Sends `pulse.screen_view` automatically on UIKit. See [Screen views](#screen-views). |
 | `automaticSignals` | true | `false` stops `pulse.session_started`, `pulse.new_install` and `pulse.app_updated`. See [Settings from the portal](#settings-from-the-portal). |
 | `appVersion` | bundle short version | Overrides the app version. |
+| `captureErrors` | true | Records crashes and sends them on the next launch. `false` installs no handler. See [Errors and crashes](#errors-and-crashes). |
+| `errorDetail` | `.full` | `.typeOnly` sends only the error type, without message and frames. |
+| `captureHeatmaps` | true | Follows the portal for tap heatmaps (`pulse.heatmap`); `false` turns them off for good. See [Heatmaps](#heatmaps). |
+| `heatmapScreenshots` | false | Debug builds only: uploads one screenshot per screen for the heatmap picture. See [Heatmaps](#heatmaps). |
+
+## Errors and crashes
+
+Captured by default, with nothing to set up:
+
+- Uncaught Objective-C exceptions (`NSException`): the name, the reason and the call stack.
+- Fatal signals: `SIGABRT`, `SIGSEGV`, `SIGBUS`, `SIGILL`, `SIGFPE` and `SIGTRAP`. Swift runtime traps (force unwrap of
+  `nil`, an index out of range, `fatalError`) end the app with one of these.
+
+The crashing app only writes a small file in its own storage, using calls that are safe inside a crash. The crash is
+then passed on to the handler that was there before, so the system crash report and any other crash handler still see
+it. On the next launch the SDK sends one `pulse.error` signal with the crash's own time and the context of that launch,
+then deletes the file. On iOS, iPadOS and macOS a stack overflow on the thread that calls `initialize` is recorded too.
+
+Every error signal carries an `error` object: `kind` (`crash`, or `handled` for `trackError`), `type` (exception name,
+signal name or Swift error type), `message`, up to 30 `frames` (top first, at most 300 characters each) and
+`symbolicated`. The whole object is at most 16 KB.
+
+Errors you catch:
+
+```swift
+do {
+    try cart.checkout()
+} catch {
+    Pulse.trackError(error, props: ["step": "checkout"])
+}
+```
+
+The type is the Swift type name (`CartError`), or the domain and code for an `NSError` (`NSURLErrorDomain -1009`). The
+message is `localizedDescription`; the frames are the call stack at the `trackError` call.
+
+Personal data filter: before anything leaves the device, messages and frames have emails, the query string and fragment
+of URLs, UUIDs, IPv4 and IPv6 addresses and runs of six or more digits replaced with `<filtered>`, and absolute paths
+(including `file://` URLs) cut to the file name. The server applies the same filter again. Code addresses written as
+`0x...` are kept. Still, do not put personal information in error messages.
+
+- `options.errorDetail = .typeOnly` sends only `kind` and `type`.
+- `options.captureErrors = false` installs no handler at all; `trackError` still works.
+- At most 10 error signals of one type are sent per session; the rest are dropped.
+- Opt-out stops recording and deletes a crash that has not been sent yet. Error signals follow the dashboard's field
+  groups like any signal; switching off the automatic signals does not switch them off.
+
+Symbols: crash frames are code addresses written as `binary+0xoffset` (for example `MyApp+0x1a2b4`) and are marked
+`symbolicated: false`; they are not readable names yet. Frames from `trackError` and from exceptions show function
+names where the build keeps them; a release build with stripped symbols shows `binary+0xoffset` instead.
+
+## Automatic signals
+
+The SDK sends these signals by itself: `pulse.session_started`, `pulse.new_install`, `pulse.app_updated`,
+`pulse.screen_view`, `pulse.permission_changed`, `pulse.deep_link`, `pulse.app_opened`, `pulse.app_backgrounded` and
+`pulse.heatmap` (off until the portal switches heatmaps on; see [Heatmaps](#heatmaps)).
+`pulse.app_opened` and `pulse.app_backgrounded` are off until the dashboard switches them on. `pulse.deep_link` is sent
+when you call `Pulse.deepLink(url)`. Crash and exit signals are `pulse.error` (see [Errors and crashes](#errors-and-crashes)).
+
+Switch-off options in code: `automaticSignals`, `automaticScreenViews`, `captureErrors` and `captureHeatmaps`. The dashboard can also
+switch every type off. Defaults and what each signal costs: https://pulse.mightys.dev/docs/automatic-signals/
+
+Guards: per session at most 20 `pulse.app_opened`, 20 `pulse.app_backgrounded`, 10 `pulse.deep_link`, 5
+`pulse.permission_changed` and 100 `pulse.screen_view`, and at most 300 automatic signals per day. What was dropped is
+counted and sent once as the `droppedAutomatic` field. Permission statuses (`notificationPermission` and, when your app
+uses App Tracking Transparency, `trackingPermission`) are only read, never requested.
+
+## Heatmaps
+
+Heatmaps show where people tap on each screen. They are off until the owner switches them on for the app in the Pulse
+portal, and the SDK reads that switch once per launch and again at every settings refresh: a refresh that switches them
+off stops capture at once and drops the points not sent yet. With no saved settings or a failed read they stay off.
+
+- Collected: the screen name (the same name as `pulse.screen_view`), the position of each tap (a fraction of the window
+  width and points from the top), the kind (`tap`, or `rage` for the third quick tap on the same spot), the width bucket
+  (`phone`, `tablet`, `desktop`) and the orientation. They are sent as `pulse.heatmap` signals, at most 200 points each
+  and 1000 per session.
+- Never collected: no element text, ids or class names, no recordings, no keyboard, nothing typed. Taps are skipped while
+  the keyboard is visible, on text fields, text views and secure fields, in the keyboard window, and on anything you mark
+  with `Pulse.heatmapIgnore(view)` or `.pulseHeatmapIgnore()` (the view and everything inside it).
+- No screen name known (no `pulse.screen_view` yet, or screen views are off) means no heatmap.
+- `captureHeatmaps = false` turns them off for good. `true` (the default) only follows the portal.
+- iOS and iPadOS: one passive observer on each key window of the app, added when heatmaps are first allowed. It never
+  cancels, delays or consumes a touch, and nothing is swizzled. App extensions capture nothing. macOS: a local monitor of
+  left mouse-up events that returns every event unchanged; the bucket is always `desktop`. tvOS and watchOS capture
+  nothing.
+
+```swift
+Pulse.heatmapIgnore(paymentView)          // UIKit and AppKit
+PaymentForm().pulseHeatmapIgnore()        // SwiftUI
+```
+
+Screenshots for the portal picture, from your own test builds only: set `options.heatmapScreenshots = true`. A binary
+package cannot see your app's debug flag, so this is your explicit yes, and it also needs an install source that is not
+the App Store or TestFlight. Heatmaps must be on. About one second after a screen appears, never while the keyboard is
+visible, the SDK uploads one picture of the key window (iOS) or the main window (macOS) per screen, size class, orientation
+and app version, at most 20 an hour, PNG encoded off the main thread (JPEG when the PNG is above 2 MiB). Never put
+`heatmapScreenshots = true` in code that ships to users: a picture shows whatever is on screen.
+
+Privacy manifest: no change. Taps are covered by the existing Product Interaction entry, and no required-reason API is used.
+
+## App Control
+
+App Control lets you require an update, suggest one, block a version or put the app into maintenance from the Pulse
+dashboard, with no code and no new release. It is on by default: after `Pulse.initialize` the SDK reads your rules in the
+background and shows its own screens in a window above your app. This works the same for SwiftUI and UIKit apps (and for
+AppKit on macOS), in light and dark, with Dynamic Type and VoiceOver, in 12 languages.
+
+| State | What the user sees |
+| --- | --- |
+| `updateRequired`, `versionBlocked`, `maintenance` | A full screen that stays until the rule changes (the buttons: Update, or Try again). |
+| `updateSuggested` | An alert with Update and Later; after Later it stays quiet for 24 hours. |
+| `announcement`, `whatsNew` | A card with one button, shown once per device. |
+| `maintenanceUpcoming` | A strip at the top the user can close. |
+
+You do not have to do anything. To draw your own screens, switch the built-in ones off and read the state:
+
+```swift
+var options = PulseOptions()
+options.control = .manual            // .automatic (default), .manual, .off
+Pulse.initialize(appKey: "YOUR_APP_KEY", options: options)
+
+// SwiftUI
+@State private var control = Pulse.control.state
+...
+.onAppear { Pulse.control.onChange { control = $0 } }
+.fullScreenCover(isPresented: .constant(control.kind == .updateRequired)) {
+    MyUpdateScreen(text: control.body, onUpdate: { Pulse.control.openStore() })
+}
+
+// UIKit
+let token = Pulse.control.onChange { state in
+    guard state.kind == .maintenance else { return }
+    self.showMaintenance(until: state.endsAt)   // delivered on the main thread
+}
+// token.cancel() stops the callbacks
+```
+
+`Pulse.control.state` is the main state (`kind`, ready-to-show `title`, `body`, `buttonText`, `url`, `startsAt`, `endsAt`,
+`version`, `allowContinue`, `isTestBuild`); `Pulse.control.notices` holds a banner or card that comes with it.
+`checkNow()` asks again at once, `openStore()` opens the store page, `dismiss()` closes a screen the user may close.
+`options.control = .off` sends no request at all and the state is always `normal`.
+
+**For App Review.** Add a sentence to the review notes if you like: "The app reads update and maintenance rules from the
+Pulse service and shows a standard update or maintenance screen when the app owner sets one. It downloads data, never code."
+App Control never blocks a build that is in review: a version newer than the one in the store is never forced to update, and
+maintenance does not apply to it when you ticked that option in the dashboard. In a debug build every blocking screen shows
+a "Test build" strip and a Continue button.
+
+**How it fails safely.** The check never delays `initialize` and the first frame of your app never waits for it. It has
+fixed time limits (3 seconds to connect and answer, 5 in all) and never retries in a loop; the next try is the next time the
+app comes to the foreground, at most once a minute. If anything goes wrong (no network, a server error, a reply that is not
+what the SDK expects) the last known state stays, or `normal` when there is none. A blocking rule older than 30 days in the
+local cache is ignored, a maintenance window from the cache never runs past its end or 72 hours after its start, and a
+required update becomes a suggestion when there is nowhere to send the user (the store already shows no newer version, no
+store link, or the user went to the store three times and came back on the same version). The SDK never closes your app and
+has no Exit button. The request carries no app key, user id, install id or device id, only the SDK name and version, and it
+works also when `Pulse.optOut` is on. App extensions get the state but never a screen. tvOS and watchOS have no App Control.
 
 ## Settings from the portal
 
@@ -199,8 +356,8 @@ dropped. At most 32 props are kept (keys sorted first), with keys up to 128 and 
 within 8192 bytes serialized. Invalid signals are ignored.
 
 **Privacy manifest.** The package ships `PrivacyInfo.xcprivacy`: tracking is false, there are no tracking domains and no
-required-reason API use, and the collected data types are Product Interaction, User ID and Other Data Types (linked, for the
+required-reason API use, and the collected data types are Product Interaction, User ID, Crash Data and Other Data Types (linked, for the
 analytics purpose) and Device ID (not linked to the user's identity, for the analytics purpose), none used for tracking.
-These entries cover the user hash, the anonymous install id hash and the metadata above;
+These entries cover the user hash, the anonymous install id hash, error and crash reports and the metadata above;
 review your app's own privacy report and App Store Connect answers, which depend on the whole app. See
 [App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/).

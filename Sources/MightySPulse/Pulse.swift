@@ -17,7 +17,10 @@ import Foundation
 public enum Pulse {
     private static let runtime = PulseRuntime(clock: PulseSystemClock(), transport: PulseURLTransport(),
                                              storage: PulseFileStorage.standard(), environment: PulseEnvironment.system,
-                                             device: PulseLiveDevice(), fetchesConfig: true)
+                                             device: PulseLiveDevice(), fetchesConfig: true,
+                                             crashHooks: PulseSystemCrashHooks.shared, permissions: PulseLivePermissions(),
+                                             exits: PulseLiveExits.make(), processStart: PulseProcessStart.read,
+                                             controlPresenter: ControlEnvironment.systemPresenter())
     private static let lifecycle = PulseLifecycle(runtime: runtime)
     private static let screens = PulseScreenInstaller { [runtime] in PulseScreenHook.install { runtime.screen($0) } }
 
@@ -30,8 +33,12 @@ public enum Pulse {
     ///   - appKey: Your app key from the Pulse dashboard.
     ///   - options: Delivery and environment settings. See ``PulseOptions``.
     public static func initialize(appKey: String, options: PulseOptions = PulseOptions()) {
-        _ = lifecycle
-        runtime.initialize(appKey: appKey, options: options) { [screens] enabled in screens.activate(enabled: enabled) }
+        lifecycle.catchUp()
+        if options.captureErrors { PulseSystemCrashHooks.prepareCallingThread() }
+        let hooks = options.captureHeatmaps ? PulseHeatmapHooks(
+            install: { [runtime] in PulseHeatmapHook.install(runtime: runtime) },
+            shot: { [runtime] screen in PulseHeatmapHook.scheduleShot(screen, runtime: runtime) }) : nil
+        runtime.initialize(appKey: appKey, options: options, heatmapHooks: hooks) { [screens] enabled in screens.activate(enabled: enabled) }
     }
     /// Records that the user is now looking at the screen called `name`.
     ///
@@ -53,6 +60,34 @@ public enum Pulse {
     public static func track(_ type: String, value: Double? = nil, props: [String: Any]? = nil) {
         runtime.track(type, value: value, props: props)
     }
+    /// Records an error your code caught and handled, as a `pulse.error` signal of kind `handled`.
+    ///
+    /// Sends the error type (the Swift type name, or domain and code for an `NSError`), its localized description
+    /// with personal data filtered out, and the call stack at this call. With
+    /// ``PulseErrorDetail/typeOnly`` only the type is sent. At most 10 errors of one type are sent per session.
+    /// Safe to call from any thread; it returns at once, never throws and respects ``optOut``.
+    ///
+    /// ```swift
+    /// do { try cart.checkout() } catch { Pulse.trackError(error, props: ["step": "checkout"]) }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - error: The error you caught.
+    ///   - props: Optional properties, with the same rules as ``track(_:value:props:)``.
+    public static func trackError(_ error: Error, props: [String: Any]? = nil) {
+        runtime.trackError(error, props: props, symbols: Thread.callStackSymbols)
+    }
+    /// Records a link the app was opened with, as a `pulse.deep_link` signal.
+    ///
+    /// Call it from your link handler (`application(_:open:options:)`, `onOpenURL`, `onContinueUserActivity`). Only
+    /// the scheme, the host and the path are sent, with number-only and uuid-like path segments replaced by `:id`, plus
+    /// the `utm_source`, `utm_medium` and `utm_campaign` values when the link has them. The query, the fragment and
+    /// every other part of the link are never read. At most 10 are sent per session.
+    ///
+    /// ```swift
+    /// .onOpenURL { url in Pulse.deepLink(url) }
+    /// ```
+    public static func deepLink(_ url: URL) { runtime.deepLink(url) }
     /// Sets or clears the optional user id.
     ///
     /// The id is hashed with SHA-256 on the device. Only the hex digest is stored or sent; the raw id never is.
@@ -67,6 +102,8 @@ public enum Pulse {
     public static func flush() async {
         await runtime.flushAsync()
     }
+    /// App Control: the update, block and maintenance rules set in the dashboard. See ``PulseControl``.
+    public static let control = PulseControl(engine: runtime.control)
     /// Whether collection is switched off for this app on this device.
     ///
     /// Setting it to `true` stops collection at once, clears the queue and remembers the choice across launches.

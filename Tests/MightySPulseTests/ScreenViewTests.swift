@@ -6,6 +6,13 @@ final class ScreenViewTests: XCTestCase {
     private func screens(_ h: Harness) -> [[String: Any]] { h.events.filter { $0["type"] as? String == "pulse.screen_view" } }
     private func props(_ event: [String: Any]) -> [String: Any] { event["props"] as? [String: Any] ?? [:] }
 
+    func testTheSdksOwnScreensAreNeverAppScreens() {
+        for owned in ["MightySPulse.ControlHostViewController", "ControlHostViewController", "MightySPulse.ControlWindow", "MightySPulse.ControlPanel"] {
+            XCTAssertNil(PulseScreenNames.screenName(rawClassName: owned, isContainer: false, isEmbeddedChild: false), owned)
+        }
+        XCTAssertEqual(PulseScreenNames.screenName(rawClassName: "MyApp.ControlCenterViewController", isContainer: false, isEmbeddedChild: false),
+                       "ControlCenterViewController", "an app class that merely starts with Control stays a screen")
+    }
     func testClassNameLosesModulePrefixAndGenerics() {
         XCTAssertEqual(PulseScreenNames.className("MyApp.HomeViewController"), "HomeViewController")
         XCTAssertEqual(PulseScreenNames.className("MyApp.Feed<MyApp.Item>"), "Feed")

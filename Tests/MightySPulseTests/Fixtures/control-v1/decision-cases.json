@@ -1,0 +1,3429 @@
+[
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": null,
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "no rules at all"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "empty rules"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": true,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "off switch wins over required update"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [
+          "pulse-swift@0.9.7"
+        ],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "disabled sdk version wins"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [
+          "pulse-swift@0.9.6"
+        ],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "another sdk version disabled does not matter"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 2,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "unknown format 2 is normal"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance active"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:30:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:30:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance exactly at start"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T13:30:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T12:30:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance exactly at end is over"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T12:30:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T11:30:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance ended"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": [
+            "android"
+          ],
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance other platform only"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": [
+            "ios",
+            "android"
+          ],
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance listed platform"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": null,
+            "min": null,
+            "mode": null,
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.2.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance exempt above store version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": false,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": null,
+            "min": null,
+            "mode": null,
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.2.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance not exempt when exemptAboveStore false"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": null,
+            "min": null,
+            "mode": null,
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.3.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance not exempt at store version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance not exempt without store version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 2,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance from a fresh cache"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 80,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T23:30:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-11-28T12:30:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance from cache past 72 hours after start is ignored"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T23:30:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-11-28T12:30:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance from server past 72 hours still applies"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [
+        "testBuild"
+      ],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": true,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance in debug build shows test banner and continue"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [
+        "maintenanceUpcoming"
+      ],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T15:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T14:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance upcoming inside heads up"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T16:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T15:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance upcoming outside heads up"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T15:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 0,
+          "platforms": null,
+          "startsAt": "2026-12-01T14:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance upcoming with zero heads up"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [
+        "maintenanceUpcoming"
+      ],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T15:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T14:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance upcoming banner on top of suggested update"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T14:00:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": null,
+          "startsAt": "2026-12-01T13:00:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "maintenance wins over blocked version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios",
+              "android"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked exact version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0+77",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked equal with build metadata"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked equal 2.3 and 2.3.0"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.1"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked other version"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "android"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked other platform"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": true,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked with continue allowed"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 721,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked from cache older than 30 days is ignored"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 696,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked from cache of 29 days applies"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "beta",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked incomparable version never blocked"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [
+        "testBuild"
+      ],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": true,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked in debug build"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "versionBlocked"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [
+          {
+            "allowContinue": false,
+            "platforms": [
+              "ios"
+            ],
+            "version": "2.3.0"
+          }
+        ],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "blocked wins over required update"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required below minimum"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.3.0",
+            "min": "2.3.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required at minimum is normal"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.2.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required above minimum is normal"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested mode below minimum"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "android": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required for another platform only"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.2.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required review safe above store version"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.4.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required with newer store version stays required"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": "2.3.0"
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "loop guard a: store version equals installed"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 3,
+      "whatsNewShown": false
+    },
+    "name": "loop guard b: three update returns"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 2,
+      "whatsNewShown": false
+    },
+    "name": "loop guard b: two update returns still required"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "android",
+      "playUpdateNotAvailable": true,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "android": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": null,
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-android@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "loop guard c: play update not available"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": false,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": null,
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "loop guard d: no store link at all"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": null,
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "no storeUrl but the SDK can build a link stays required"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 800,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required from cache older than 30 days is ignored"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 800,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": true,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested from old cache still suggests"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required incomparable app version is never below minimum"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.4.0-beta.1",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required with pre-release below release minimum"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [
+        "testBuild"
+      ],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": true,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required in debug build"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2024.9.30",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2024.11.3",
+            "min": "2024.11.3",
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "required with 10 part versions"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested by latest"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.3.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested at latest is normal"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": 2,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested dismissed 2 hours ago is quiet"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": 25,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "suggested dismissed 25 hours ago shows again"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "required",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "latest with required mode does not suggest"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": "2.4.0",
+            "mode": null,
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "mode null does nothing"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": "announcement",
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a7",
+          "platforms": null,
+          "title": "Winter event",
+          "until": "2026-12-04T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "announcement shown as card"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a7",
+          "platforms": null,
+          "title": "Winter event",
+          "until": "2026-12-04T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [
+        "a7"
+      ],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "announcement already shown"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a7",
+          "platforms": null,
+          "title": "Winter event",
+          "until": "2026-11-30T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "announcement expired"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a7",
+          "platforms": [
+            "web"
+          ],
+          "title": "Winter event",
+          "until": "2026-12-04T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "announcement other platform"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": "whatsNew",
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": true,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": {
+          "body": "New levels.",
+          "version": "2.3.0"
+        }
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "whats new after the update"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": {
+          "body": "New levels.",
+          "version": "2.3.0"
+        }
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "whats new not after an update"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": true,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": {
+          "body": "New levels.",
+          "version": "2.3.0"
+        }
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": true
+    },
+    "name": "whats new already shown"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": null,
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": true,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": {
+          "body": "Soon.",
+          "version": "2.4.0"
+        }
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "whats new for another version"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": "whatsNew",
+      "state": "normal"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": true,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a7",
+          "platforms": null,
+          "title": "Winter event",
+          "until": "2026-12-04T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": {
+          "body": "New.",
+          "version": "2.3.0"
+        }
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "whats new wins over announcement"
+  },
+  {
+    "expected": {
+      "allowContinue": true,
+      "banners": [],
+      "card": "announcement",
+      "state": "updateSuggested"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "ios",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": {
+          "body": "Join us.",
+          "buttonText": null,
+          "id": "a8",
+          "platforms": null,
+          "title": "Winter event",
+          "until": "2026-12-02T13:30:00Z",
+          "url": null
+        },
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "ios": {
+            "latest": "2.4.0",
+            "min": null,
+            "mode": "suggested",
+            "storeUrl": "https://apps.apple.com/app/id1",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-swift@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "card next to a suggested update"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "updateRequired"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "android",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": null,
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {
+          "android": {
+            "latest": "3.0.0",
+            "min": "3.0.0",
+            "mode": "required",
+            "storeUrl": "https://play.google.com/store/apps/details?id=x",
+            "storeVersion": null
+          }
+        },
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-android@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "android platform key"
+  },
+  {
+    "expected": {
+      "allowContinue": false,
+      "banners": [],
+      "card": null,
+      "state": "maintenance"
+    },
+    "input": {
+      "appVersion": "2.3.0",
+      "cacheAgeHours": 0,
+      "canBuildStoreLink": true,
+      "debug": false,
+      "fromCache": false,
+      "justUpdated": false,
+      "now": "2026-12-01T13:30:00Z",
+      "platform": "web",
+      "playUpdateNotAvailable": false,
+      "rules": {
+        "announcement": null,
+        "blocked": [],
+        "disabledSdkVersions": [],
+        "format": 1,
+        "maintenance": {
+          "endsAt": "2026-12-01T13:35:00Z",
+          "exemptAboveStore": true,
+          "headsUpMinutes": 60,
+          "platforms": [
+            "web"
+          ],
+          "startsAt": "2026-12-01T13:25:00Z"
+        },
+        "off": false,
+        "texts": {
+          "custom": {}
+        },
+        "update": {},
+        "version": 7,
+        "whatsNew": null
+      },
+      "sdk": "pulse-js@0.9.7",
+      "shownAnnouncements": [],
+      "suggestDismissedHoursAgo": null,
+      "updateReturns": 0,
+      "whatsNewShown": false
+    },
+    "name": "web platform maintenance"
+  }
+]

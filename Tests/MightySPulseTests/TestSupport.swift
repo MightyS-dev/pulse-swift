@@ -86,23 +86,59 @@ final class FakeDevice: PulseDeviceSource {
     func awaitReady(timeout: TimeInterval) {}
     func snapshot() -> [String: String] { lock.lock(); defer { lock.unlock() }; return values }
 }
+final class FakePresenter: ControlPresenter {
+    private let lock = NSLock()
+    private var _screens: [ControlScreen] = []
+    private var _hides = 0
+    private var _actions: ControlActions?
+    var screens: [ControlScreen] { lock.lock(); defer { lock.unlock() }; return _screens }
+    var hides: Int { lock.lock(); defer { lock.unlock() }; return _hides }
+    var actions: ControlActions? { lock.lock(); defer { lock.unlock() }; return _actions }
+    func show(_ screen: ControlScreen, actions: ControlActions) { lock.lock(); _screens.append(screen); _actions = actions; lock.unlock() }
+    func hide() { lock.lock(); _hides += 1; lock.unlock() }
+}
+extension ControlEnvironment {
+    /// A fixed environment for tests: iOS, English, no lifecycle observers, callbacks on a private serial queue.
+    static func test(platform: String? = "ios", languages: [String] = ["en"], isExtension: Bool = false,
+                     canBuildStoreLink: Bool = false, opened: @escaping (URL) -> Void = { _ in }) -> ControlEnvironment {
+        ControlEnvironment(platform: platform, appName: "Orchard", preferredLanguages: { languages }, isExtension: isExtension,
+                           locale: Locale(identifier: "en_US_POSIX"), timeZone: TimeZone(identifier: "UTC")!,
+                           canBuildStoreLink: canBuildStoreLink, openURL: opened,
+                           callbackQueue: DispatchQueue(label: "test.control.callbacks"), observesLifecycle: false)
+    }
+}
 final class Harness {
     let clock: FakeClock
     let storage: FakeStorage
     let transport = FakeTransport()
+    let controlTransport = FakeTransport()
+    let presenter = FakePresenter()
+    let controlEnvironment: ControlEnvironment
     let runtime: PulseRuntime
     init(options: PulseOptions = PulseOptions(), storage: FakeStorage = FakeStorage(),
          clock: FakeClock = FakeClock(), key: String = "synthetic-key", initialize: Bool = true,
          random: @escaping () -> Double = { 0.5 }, device: PulseDeviceSource = PulseNoDevice(),
-         automatic: Bool = false, fetchesConfig: Bool = false, version: String = "1.2.3", build: String = "42") {
-        self.storage = storage; self.clock = clock
+         automatic: Bool = false, fetchesConfig: Bool = false, version: String = "1.2.3", build: String = "42",
+         crashHooks: PulseCrashHooks = PulseNoCrashHooks(), permissions: PulsePermissionSource = PulseNoPermissions(),
+         exits: PulseExitSource = PulseNoExits(), processStart: Date? = nil, installSource: String? = nil,
+         controlEnvironment: ControlEnvironment = .test()) {
+        self.storage = storage; self.clock = clock; self.controlEnvironment = controlEnvironment
         runtime = PulseRuntime(clock: clock, transport: transport, storage: storage, environment: {
-            ["platform": "mobile", "osName": "iOS", "osVersion": "18.0.0", "appVersion": version,
+            var values = ["platform": "mobile", "osName": "iOS", "osVersion": "18.0.0", "appVersion": version,
              "appBuildNumber": build, "deviceModel": "Apple mobile device", "locale": "sr-RS"]
-        }, random: random, device: device, automatic: automatic, fetchesConfig: fetchesConfig, zone: { TimeZone(identifier: "UTC")! })
+            if let installSource = installSource { values["installSource"] = installSource }
+            return values
+        }, random: random, device: device, automatic: automatic, fetchesConfig: fetchesConfig, zone: { TimeZone(identifier: "UTC")! },
+           crashHooks: crashHooks, permissions: permissions, exits: exits, processStart: { processStart },
+           controlTransport: controlTransport, controlEnvironment: controlEnvironment, controlPresenter: presenter)
+        runtime.heatmapFixedBucket = nil
         if initialize { runtime.initialize(appKey: key, options: options); settle() }
     }
-    func settle(_ passes: Int = 64) { for _ in 0..<passes { runtime.barrier() } }
+    func settle(_ passes: Int = 64) {
+        for _ in 0..<passes { runtime.barrier() }
+        // The control queue answers on its own queue and hops to the callback queue; two rounds drain both.
+        for _ in 0..<2 { runtime.control.barrier(); controlEnvironment.callbackQueue.sync {} }
+    }
     func advance(_ seconds: Double) { clock.advance(seconds); settle() }
     func flush() { runtime.flush {}; settle() }
     func send(_ type: String = "event", value: Double? = nil, props: [String: Any]? = nil) {

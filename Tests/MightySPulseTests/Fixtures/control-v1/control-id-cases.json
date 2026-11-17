@@ -1,0 +1,62 @@
+[
+  {
+    "controlId": "289a7efb8bf26ac6a610fe040d5d87df",
+    "key": "3f9c2a1b7d4e5f60718293a4b5c6d7e8",
+    "note": "v1 app key (32 hex)"
+  },
+  {
+    "controlId": "af9084d67cb5bb704ee3727258f95e14",
+    "key": "3F9C2A1B7D4E5F60718293A4B5C6D7E8",
+    "note": "v1 app key upper case is a different key"
+  },
+  {
+    "controlId": "b643c9de0835d096929000814e950594",
+    "key": "A-EU-1234567890",
+    "note": "Dashed key style"
+  },
+  {
+    "controlId": "934d52f1058d680b3c715351af81c461",
+    "key": "A-US-1234567890",
+    "note": "Dashed key style, other region"
+  },
+  {
+    "controlId": "eab71d85f464ccc6dfe429c04f572c15",
+    "key": "0F8FAD5B-D9CB-469F-A165-70867728950E",
+    "note": "UUID style app id"
+  },
+  {
+    "controlId": "ef03dee113bd894601f4a949e85167cb",
+    "key": "A-EU-1234567890 ",
+    "note": "trailing space is not trimmed"
+  },
+  {
+    "controlId": "4e6012bec510c9f671287a3092cb23d7",
+    "key": " A-EU-1234567890",
+    "note": "leading space is not trimmed"
+  },
+  {
+    "controlId": "2b4bb32e6dc50e364841d082d7e8ded4",
+    "key": "ключ-приложения-ü-é-漢字",
+    "note": "unicode"
+  },
+  {
+    "controlId": "431e41ffb189f7ae97cb39d0965e336c",
+    "key": "app-key-🚀",
+    "note": "emoji"
+  },
+  {
+    "controlId": "e3b0c44298fc1c149afbf4c8996fb924",
+    "key": "",
+    "note": "empty string"
+  },
+  {
+    "controlId": "2c5517b9131fdc98e681ece95388e5a3",
+    "key": "key\twith\ttab",
+    "note": "tab inside"
+  },
+  {
+    "controlId": "17b16d8ef494060fefa36a6a41567b8c",
+    "key": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+    "note": "very long key"
+  }
+]

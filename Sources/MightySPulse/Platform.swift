@@ -43,19 +43,28 @@ internal final class PulseURLTransport: NSObject, PulseTransport, URLSessionData
         config.requestCachePolicy = .reloadIgnoringLocalCacheData
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
-    func send(_ input: PulseRequest, completion: @escaping (PulseResponse) -> Void) -> PulseCancellation {
+    /// The request exactly as it goes out; a test reads its headers.
+    static func makeRequest(_ input: PulseRequest) -> URLRequest {
         var request = URLRequest(url: input.url)
         request.httpMethod = input.method
         if input.method == "POST" { request.httpBody = input.body }
         request.timeoutInterval = input.timeout ?? min(90, 10 + Double(input.body.count / 16384))
         if let tag = input.ifNoneMatch { request.setValue(tag, forHTTPHeaderField: "If-None-Match") }
-        request.setValue(input.appKey, forHTTPHeaderField: "X-App-Key")
-        if input.method == "POST" { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         // Avoid Foundation's default application/device User-Agent metadata.
         request.setValue(PulseInfo.sdkName + "/" + PulseInfo.version, forHTTPHeaderField: "User-Agent")
+        if input.anonymous {
+            request.httpShouldHandleCookies = false
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            return request
+        }
+        request.setValue(input.appKey, forHTTPHeaderField: "X-App-Key")
+        if input.method == "POST" { request.setValue(input.contentType ?? "application/json", forHTTPHeaderField: "Content-Type") }
         if let batch = input.batchId { request.setValue(batch, forHTTPHeaderField: "X-Pulse-Batch") }
         if input.gzip { request.setValue("gzip", forHTTPHeaderField: "Content-Encoding") }
-        let task = session.dataTask(with: request)
+        return request
+    }
+    func send(_ input: PulseRequest, completion: @escaping (PulseResponse) -> Void) -> PulseCancellation {
+        let task = session.dataTask(with: Self.makeRequest(input))
         lock.lock(); tasks[task.taskIdentifier] = ResponseState(completion: completion); lock.unlock()
         task.resume()
         return task
@@ -159,19 +168,35 @@ internal enum PulseEnvironment {
 
 internal final class PulseLifecycle {
     private var observers: [NSObjectProtocol] = []
+    private weak var runtime: PulseRuntime?
     init(runtime: PulseRuntime) {
+        self.runtime = runtime
         let center = NotificationCenter.default
         var background: [Notification.Name] = [], termination: [Notification.Name] = []
+        var active: [Notification.Name] = [], left: [Notification.Name] = []
         #if canImport(UIKit) && !os(watchOS)
         background = [UIApplication.didEnterBackgroundNotification, UIApplication.willResignActiveNotification]
         termination = [UIApplication.willTerminateNotification]
+        active = [UIApplication.didBecomeActiveNotification]
+        left = [UIApplication.didEnterBackgroundNotification]
         #elseif os(macOS)
         background = [NSApplication.didResignActiveNotification, NSApplication.didHideNotification]
         termination = [NSApplication.willTerminateNotification]
+        active = [NSApplication.didBecomeActiveNotification]
+        left = [NSApplication.didResignActiveNotification]
         #elseif os(watchOS)
         background = [WKExtension.applicationDidEnterBackgroundNotification, WKExtension.applicationWillResignActiveNotification]
+        active = [WKExtension.applicationDidBecomeActiveNotification]
+        left = [WKExtension.applicationDidEnterBackgroundNotification]
         // watchOS offers no reliable termination callback. Background persistence is the last opportunity.
         #endif
+        // The automatic events go first, so that the queue save that follows already holds them.
+        for name in active {
+            observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.foreground() })
+        }
+        for name in left {
+            observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.noteBackground() })
+        }
         for name in background {
             observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.backgroundSave() })
         }
@@ -180,4 +205,20 @@ internal final class PulseLifecycle {
         }
     }
     deinit { for observer in observers { NotificationCenter.default.removeObserver(observer) } }
+
+    /// The app may already be active when the SDK starts (initialize called late), so the notification was missed.
+    /// Reads the state on the main thread without touching `UIApplication.shared`, which app extensions cannot use.
+    func catchUp() {
+        #if canImport(UIKit) && !os(watchOS)
+        DispatchQueue.main.async { [weak runtime] in
+            let application = (UIApplication.self as AnyObject).perform(NSSelectorFromString("sharedApplication"))?
+                .takeUnretainedValue() as? UIApplication
+            if application?.applicationState == .active { runtime?.foreground() }
+        }
+        #elseif os(macOS)
+        DispatchQueue.main.async { [weak runtime] in
+            if NSApp?.isActive == true { runtime?.foreground() }
+        }
+        #endif
+    }
 }

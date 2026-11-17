@@ -4,7 +4,7 @@ import XCTest
 
 final class RemoteConfigTests: XCTestCase {
     private func data(_ text: String) -> Data { Data(text.utf8) }
-    private let allGroupsOff = "{\"version\":2,\"groups\":{\"device\":false,\"screen\":false,\"settings\":false,\"network\":false,\"app\":false,\"usage\":false}}"
+    private let allGroupsOff = "{\"version\":2,\"groups\":{\"device\":false,\"screen\":false,\"settings\":false,\"network\":false,\"app\":false,\"usage\":false,\"permissions\":false}}"
     private func body(version: Int = 3) -> String {
         "{\"version\":\(version),\"screenViews\":true,\"automaticSignals\":true,\"groups\":{\"device\":true,\"screen\":true,\"settings\":true,\"network\":true,\"app\":true,\"usage\":true},\"disabledSignals\":[]}"
     }
@@ -50,10 +50,10 @@ final class RemoteConfigTests: XCTestCase {
         XCTAssertNil(PulseRemoteConfig.parse(nil))
         XCTAssertNil(PulseRemoteConfig.parse(Data(repeating: 32, count: PulseRemoteConfig.maxBytes + 1)))
     }
-    func testGroupsCoverFortySixKeysOnceAndNoBaseKey() {
+    func testGroupsCoverFiftyKeysOnceAndNoBaseKey() {
         let all = PulseRemoteConfig.groupKeys.values.flatMap { $0 }
-        XCTAssertEqual(all.count, 46)
-        XCTAssertEqual(Set(all).count, 46)
+        XCTAssertEqual(all.count, 50)
+        XCTAssertEqual(Set(all).count, 50)
         for base in ["platform", "osName", "osVersion", "appVersion", "appBuildNumber", "deviceModel", "locale", "sdkName", "sdkVersion", "bundleId"] {
             XCTAssertFalse(all.contains(base), base)
         }

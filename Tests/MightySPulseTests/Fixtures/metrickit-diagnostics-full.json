@@ -1,0 +1,30 @@
+{
+  "timeStampBegin": "2026-11-15 08:00:00",
+  "timeStampEnd": "2026-11-16 08:00:00",
+  "crashDiagnostics": [{
+    "version": "1.0.0",
+    "diagnosticMetaData": {"signal": 11, "exceptionType": 1, "exceptionCode": 1, "terminationReason": "Namespace SIGNAL, Code 11", "bundleIdentifier": "com.example.secret", "appVersion": "1.2.3"},
+    "callStackTree": {"callStackPerThread": false, "callStacks": [
+      {"threadAttributed": false, "callStackRootFrames": [{"binaryName": "libdispatch.dylib", "offsetIntoBinaryTextSegment": 100, "address": 1, "sampleCount": 1}]},
+      {"threadAttributed": true, "callStackRootFrames": [
+        {"binaryName": "dyld", "offsetIntoBinaryTextSegment": 4096, "address": 4300000000, "sampleCount": 1, "subFrames": [
+          {"binaryName": "MyApp", "offsetIntoBinaryTextSegment": 74565, "address": 4300074565, "sampleCount": 1, "subFrames": [
+            {"binaryName": "MyApp", "offsetIntoBinaryTextSegment": 74999, "address": 4300074999, "sampleCount": 1}]}]}]}]}
+  }],
+  "hangDiagnostics": [{
+    "version": "1.0.0",
+    "diagnosticMetaData": {"hangDuration": "3.1 sec"},
+    "callStackTree": {"callStacks": [{"threadAttributed": true, "callStackRootFrames": [
+      {"binaryName": "MyApp", "offsetIntoBinaryTextSegment": 512, "sampleCount": 1, "subFrames": [{"binaryName": "UIKitCore", "offsetIntoBinaryTextSegment": 9, "sampleCount": 1}]}]}]}
+  }],
+  "cpuExceptionDiagnostics": [{
+    "version": "1.0.0",
+    "diagnosticMetaData": {"totalCPUTime": "190 sec", "totalSampledTime": "200 sec"},
+    "callStackTree": {"callStacks": [{"threadAttributed": true, "callStackRootFrames": [{"binaryName": "MyApp", "offsetIntoBinaryTextSegment": 77, "sampleCount": 3}]}]}
+  }],
+  "diskWriteExceptionDiagnostics": [{
+    "version": "1.0.0",
+    "diagnosticMetaData": {"writesCaused": "1073741824 bytes"},
+    "callStackTree": {"callStacks": []}
+  }]
+}

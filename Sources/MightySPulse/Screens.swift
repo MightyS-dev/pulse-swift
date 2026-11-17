@@ -17,6 +17,7 @@ internal enum PulseScreenNames {
     }
     /// System and hosting classes that are never a screen of the app.
     static func isSystemOrHosting(_ raw: String) -> Bool {
+        if PulseSdkUi.isOwned(rawClassName: raw) { return true }
         if raw.hasPrefix("SwiftUI.") || raw.hasPrefix("_TtGC7SwiftUI") || raw.hasPrefix("_TtC7SwiftUI") { return true }
         let name = className(raw)
         if name.hasPrefix("_") || name == "UIHostingController" { return true }
@@ -77,6 +78,7 @@ internal enum PulseScreenHook {
         method_setImplementation(method, imp_implementationWithBlock(replacement))
     }
     static func appeared(_ controller: UIViewController) {
+        if controller is ControlHostViewController || controller.view?.window is ControlWindow { return }
         let isContainer = controller is UINavigationController || controller is UITabBarController
             || controller is UIPageViewController || controller is UISplitViewController
         var embedded = false

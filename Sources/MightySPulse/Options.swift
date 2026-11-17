@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.6"
+    static let version = "0.9.7"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -45,6 +45,31 @@ public struct PulseOptions {
     public var automaticSignals = true
     /// Overrides the app version taken from the bundle. Default `nil`.
     public var appVersion: String?
+    /// Records crashes (uncaught Objective-C exceptions and fatal signals) and sends each one as a `pulse.error`
+    /// signal on the next launch. Default `true`. Set it to `false` to install no handler at all;
+    /// ``Pulse/trackError(_:props:)`` still works.
+    public var captureErrors = true
+    /// How much of an error is sent. Default ``PulseErrorDetail/full``.
+    public var errorDetail = PulseErrorDetail.full
+    /// Follows the dashboard for heatmaps of taps and clicks (`pulse.heatmap`). Default `true`.
+    ///
+    /// Heatmaps are off until the owner switches them on in the dashboard. `false` here turns them off for good;
+    /// `true` never forces them on over the dashboard. They also stop when automatic signals are off. On tvOS and
+    /// watchOS nothing is captured. See ``Pulse/heatmapIgnore(_:)`` to keep a view out.
+    public var captureHeatmaps = true
+    /// Lets debug builds upload one screenshot per screen for the heatmap picture. Default `false`.
+    ///
+    /// A binary package cannot see your app's debug flag, so this is your explicit yes. Even then nothing is sent from a
+    /// build installed from the App Store or TestFlight, and nothing is sent unless heatmaps are on. Never set it from
+    /// code that ships to users.
+    public var heatmapScreenshots = false
+    /// What App Control does: ``PulseControlMode/automatic`` (the default) checks the update, block and maintenance rules set
+    /// in the dashboard and shows the built-in screens, ``PulseControlMode/manual`` only keeps ``Pulse/control`` current, and
+    /// ``PulseControlMode/off`` sends no request at all.
+    ///
+    /// The check never blocks ``Pulse/initialize(appKey:options:)``, sends no user or device identity and works also when
+    /// ``Pulse/optOut`` is on. If the rules cannot be read, the app keeps running as before.
+    public var control = PulseControlMode.automatic
     /// Creates options with the default values.
     public init() {}
 
@@ -56,6 +81,14 @@ public struct PulseOptions {
         copy.maxQueueAgeDays = maxQueueAgeDays.isFinite && maxQueueAgeDays > 0 ? min(29, maxQueueAgeDays) : 7
         return copy
     }
+}
+
+/// How much of an error ``Pulse`` sends with a `pulse.error` signal.
+public enum PulseErrorDetail {
+    /// The error type, the filtered message and the stack frames.
+    case full
+    /// Only the error type: no message and no frames.
+    case typeOnly
 }
 
 internal protocol PulseCancellation: AnyObject { func cancel() }
@@ -71,7 +104,11 @@ internal struct PulseRequest {
     var method = "POST"
     var ifNoneMatch: String?
     var timeout: TimeInterval?
+    /// App Control: no app key and no other identity header, only Accept, User-Agent and If-None-Match.
+    var anonymous = false
     var batchId: String?
+    /// Content-Type of the body. Nil means application/json (batches). Set for the heatmap screenshot upload.
+    var contentType: String?
 }
 internal struct PulseResponse {
     var status: Int
@@ -98,6 +135,12 @@ internal struct PulseInput {
     let props: [String: Any]
     /// Fields captured with the signal: session statistics and time zone.
     var extra: [String: String] = [:]
+    /// The `error` object of a `pulse.error` signal.
+    var error: [String: Any]?
+    /// System keys that belong to this one signal only, such as `launchMs`.
+    var automaticFields: [String: String] = [:]
+    /// The `heatmap` object of a `pulse.heatmap` signal.
+    var heatmap: [String: Any]?
 }
 
 internal enum PulseJSON {
@@ -134,6 +177,8 @@ internal enum PulseJSON {
             "sessionId": input.session, "type": input.type, "debug": debug, "system": system, "props": props]
         if let value = input.value { object["value"] = value }
         if let hash = input.userHash { object["userHash"] = hash }
+        if let error = input.error { object["error"] = error }
+        if let heatmap = input.heatmap { object["heatmap"] = heatmap }
         guard let data = try? encode(object), data.count + 2 <= maxBodyBytes else { return nil }
         return data
     }
