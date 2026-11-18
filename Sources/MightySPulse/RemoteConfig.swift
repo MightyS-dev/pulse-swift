@@ -9,7 +9,7 @@ internal struct PulseRemoteConfig: Equatable {
                                               PulseAutoTypes.deepLink, PulseAutoTypes.permissionChanged,
                                               PulseHeatmapMath.signalType]
     /// Types that are sent only when the portal lists them in `enabledSignals`.
-    static let optInTypes: Set<String> = [PulseAutoTypes.appOpened, PulseAutoTypes.appBackgrounded]
+    static let optInTypes: Set<String> = [PulseAutoTypes.appOpened]
     static let screenViewType = "pulse.screen_view"
     /// Field groups and the keys each one controls. The base fields (platform, OS, app version, build, device model,
     /// locale, SDK and bundle identifier) are in no group and are always sent.

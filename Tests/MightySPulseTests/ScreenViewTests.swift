@@ -18,6 +18,30 @@ final class ScreenViewTests: XCTestCase {
         XCTAssertEqual(PulseScreenNames.className("MyApp.Feed<MyApp.Item>"), "Feed")
         XCTAssertEqual(PulseScreenNames.className("Plain"), "Plain")
     }
+    func testSwiftMangledNamesOfPrivateAndNestedClassesBecomeTheirOwnName() {
+        // The Objective-C runtime names private and nested Swift classes in mangled form. Real names from swiftc.
+        let hash = "8D9C4663DACC9BB988956ACC6F1E8558"
+        XCTAssertEqual(PulseScreenNames.className("_TtC5MyAppP33_\(hash)18HomeViewController"), "HomeViewController")
+        XCTAssertEqual(PulseScreenNames.className("_TtC5MyAppP33_\(hash)7Detail2"), "Detail2")
+        XCTAssertEqual(PulseScreenNames.className("_TtCC5MyApp5Outer7InnerVC"), "InnerVC")
+        XCTAssertEqual(PulseScreenNames.className("_TtCC5MyApp5OuterP33_\(hash)9PrivInner"), "PrivInner")
+        XCTAssertEqual(PulseScreenNames.screenName(rawClassName: "_TtC5MyAppP33_\(hash)18HomeViewController", isContainer: false,
+                                                   isEmbeddedChild: false), "HomeViewController")
+        XCTAssertNil(PulseScreenNames.screenName(rawClassName: "_TtCC5MyApp5OuterP33_\(hash)13ControlWindow", isContainer: false,
+                                                 isEmbeddedChild: false), "an owned name stays owned after demangling")
+    }
+    func testMangledNamesThatDoNotParseOrComeFromTheSystemAreStillSkipped() {
+        for raw in ["_TtC5MyApp", "_TtC5MyApp99Short", "_TtC5MyApp4Home7", "_TtGC5MyApp4FeedSS_", "_TtC5MyAppP33_x4Home", "_Tt"] {
+            XCTAssertNil(PulseScreenNames.screenName(rawClassName: raw, isContainer: false, isEmbeddedChild: false), raw)
+        }
+        XCTAssertNil(PulseScreenNames.screenName(rawClassName: "_TtC8StoreKit17ProductController", isContainer: false,
+                                                 isEmbeddedChild: false, fromSystemFramework: true), "a system framework class")
+        XCTAssertEqual(PulseScreenNames.screenName(rawClassName: "MyApp.Home", isContainer: false, isEmbeddedChild: false,
+                                                   fromSystemFramework: true), "Home", "only mangled names use the framework rule")
+        XCTAssertTrue(PulseScreenNames.isSystemFramework(bundlePath: "/System/Library/Frameworks/StoreKit.framework"))
+        XCTAssertTrue(PulseScreenNames.isSystemFramework(bundlePath: "/sim/RuntimeRoot/System/Library/PrivateFrameworks/X.framework"))
+        XCTAssertFalse(PulseScreenNames.isSystemFramework(bundlePath: "/private/var/containers/Bundle/Application/ID/MyApp.app"))
+    }
     func testCapturedNameForAnAppController() {
         XCTAssertEqual(PulseScreenNames.screenName(rawClassName: "MyApp.SettingsViewController", isContainer: false,
                                                    isEmbeddedChild: false), "SettingsViewController")

@@ -223,11 +223,12 @@ final class HeatmapTests: XCTestCase {
     func testBackgroundFlushesTheBuffer() {
         let h = make()
         h.foreground(); screen(h); tap(h)
-        let before = h.runtime.countForTests
         h.background()
-        XCTAssertEqual(h.runtime.countForTests, before + 1, "the background itself queued the buffer")
+        // 0.9.8: the background itself flushes the buffer and sends at once, with no explicit flush.
+        XCTAssertEqual(maps(h).count, 1, "the background itself sent the buffer")
+        XCTAssertEqual(h.runtime.countForTests, 0, "nothing left waiting in the queue")
         h.flush()
-        XCTAssertEqual(maps(h).count, 1)
+        XCTAssertEqual(maps(h).count, 1, "a later flush does not send it twice")
     }
     func testFlushSendsOpenBufferAndEmptyBuffersAreNeverSent() {
         let h = make()

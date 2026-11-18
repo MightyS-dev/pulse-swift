@@ -10,8 +10,12 @@ final class DeviceFieldTests: XCTestCase {
 
     func testStaticContextHasEveryKeyThePlatformCanGiveInTheAllowedFormat() {
         let system = PulseEnvironment.system()
-        for key in ["deviceType", "deviceBrand", "architecture", "installSource", "isSimulator", "isDebugBuild",
-                    "targetEnvironment", "layoutDirection", "language", "preferredLanguage"] {
+        var required = ["deviceBrand", "architecture", "installSource", "isSimulator", "isDebugBuild",
+                        "targetEnvironment", "layoutDirection", "language", "preferredLanguage"]
+        #if !(os(iOS) && !targetEnvironment(macCatalyst))
+        required.append("deviceType") // On iOS it comes from the live device snapshot (idiom), see the test below.
+        #endif
+        for key in required {
             XCTAssertFalse((system[key] ?? "").isEmpty, "\(key) is missing")
         }
         XCTAssertEqual(system["deviceBrand"], "Apple")
@@ -101,6 +105,9 @@ final class DeviceFieldTests: XCTestCase {
         for key in ["screenWidth", "screenHeight", "screenWidthPx", "screenHeightPx", "screenCount", "screenScale"] {
             if let number = snapshot[key] { XCTAssertNotNil(number.range(of: "^[0-9]+(\\.[0-9]{1,3})?$", options: .regularExpression), key) }
         }
+        #if os(iOS) && !targetEnvironment(macCatalyst)
+        XCTAssertTrue(["phone", "tablet"].contains(snapshot["deviceType"] ?? ""), "iOS deviceType comes from the idiom")
+        #endif
         let again = live.snapshot()
         XCTAssertEqual(again["lowPowerMode"], snapshot["lowPowerMode"])
     }

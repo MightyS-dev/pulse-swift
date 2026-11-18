@@ -382,15 +382,22 @@ internal final class PulseRuntime {
         let at = clock.now
         state.async { [self] in
             guard !optOut, !stopped, isForeground else { return }
+            // Save the end even when this type is disabled, capped or cannot be delivered. Do not move lastActivity:
+            // the idle rule still measures time since the last signal, not since a lifecycle callback.
+            let recentActivity = at.timeIntervalSince(lastActivity) < 1800
+            usage.touch(now: at)
+            usage.persist(now: at)
             heatmap.flush(at: at)
             isForeground = false; backgrounded = true
             if let since = screenSince { screenAccumulated += max(0, at.timeIntervalSince(since)); screenSince = nil }
             let seconds = auto.foregroundSeconds(now: at)
             // Leaving the app never opens a session by itself: after 30 minutes without a signal it is dropped.
-            if let seconds = seconds, at.timeIntervalSince(lastActivity) < 1800 {
+            if let seconds = seconds, recentActivity {
                 captureAutomatic(PulseAutoTypes.appBackgrounded, props: ["foregroundSeconds": NSNumber(value: seconds)], at: at)
             }
             auto.finishForeground(seconds: seconds, now: at)
+            forced = true
+            pump() // Persist the original signal timestamp before attempting transport.
         }
     }
     /// A link the app was opened with. Only scheme, host, path (identifiers as `:id`) and the three utm tags are read.

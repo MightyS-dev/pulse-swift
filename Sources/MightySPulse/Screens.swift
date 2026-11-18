@@ -12,9 +12,34 @@ internal enum PulseScreenNames {
     /// A class name without its module prefix and without generic arguments: "MyApp.Home" and
     /// "MyApp.Feed<MyApp.Item>" give "Home" and "Feed".
     static func className(_ raw: String) -> String {
+        if let swiftName = demangledClassName(raw) { return swiftName }
         let head = raw.split(separator: "<", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? raw
         return head.split(separator: ".").last.map(String.init) ?? head
     }
+    /// The own name of a private or nested Swift class, which the Objective-C runtime spells in mangled form:
+    /// "_TtC5MyAppP33_<discriminator>4Home" and "_TtCC5MyApp5Outer4Home" give "Home". Nil when it does not parse exactly.
+    static func demangledClassName(_ raw: String) -> String? {
+        guard raw.hasPrefix("_TtC") else { return nil }
+        var rest = Substring(raw.dropFirst(3))
+        var nesting = 0
+        while rest.first == "C" { nesting += 1; rest = rest.dropFirst() }
+        var names: [Substring] = []
+        while !rest.isEmpty {
+            let isDiscriminator = rest.first == "P"
+            if isDiscriminator { rest = rest.dropFirst() }
+            let digits = rest.prefix { $0.isASCII && $0.isNumber }
+            guard let length = Int(digits), length > 0 else { return nil }
+            rest = rest.dropFirst(digits.count)
+            guard rest.count >= length else { return nil }
+            if !isDiscriminator { names.append(rest.prefix(length)) }
+            rest = rest.dropFirst(length)
+        }
+        // The module plus one name for each C.
+        guard names.count == nesting + 1, let last = names.last else { return nil }
+        return String(last)
+    }
+    /// Whether a class comes from an Apple framework on the device or simulator.
+    static func isSystemFramework(bundlePath: String) -> Bool { bundlePath.contains("/System/Library/") }
     /// System and hosting classes that are never a screen of the app.
     static func isSystemOrHosting(_ raw: String) -> Bool {
         if PulseSdkUi.isOwned(rawClassName: raw) { return true }
@@ -28,8 +53,11 @@ internal enum PulseScreenNames {
         return systemPrefixes.contains { name.hasPrefix($0) }
     }
     /// The name to send for a view controller, or nil when it must be skipped.
-    static func screenName(rawClassName: String, isContainer: Bool, isEmbeddedChild: Bool) -> String? {
+    /// A mangled Swift name from an Apple framework is skipped too, since demangling would otherwise let it through.
+    static func screenName(rawClassName: String, isContainer: Bool, isEmbeddedChild: Bool,
+                           fromSystemFramework: Bool = false) -> String? {
         guard !isContainer, !isEmbeddedChild, !isSystemOrHosting(rawClassName) else { return nil }
+        if fromSystemFramework && rawClassName.hasPrefix("_Tt") { return nil }
         return clean(className(rawClassName))
     }
 }
@@ -78,7 +106,10 @@ internal enum PulseScreenHook {
         method_setImplementation(method, imp_implementationWithBlock(replacement))
     }
     static func appeared(_ controller: UIViewController) {
+        #if !os(tvOS)
+        // App Control screens are never app screens. Its UIKit types do not exist on tvOS.
         if controller is ControlHostViewController || controller.view?.window is ControlWindow { return }
+        #endif
         let isContainer = controller is UINavigationController || controller is UITabBarController
             || controller is UIPageViewController || controller is UISplitViewController
         var embedded = false
@@ -86,8 +117,11 @@ internal enum PulseScreenHook {
             embedded = !(parent is UINavigationController || parent is UITabBarController
                 || parent is UIPageViewController || parent is UISplitViewController)
         }
-        guard let name = PulseScreenNames.screenName(rawClassName: NSStringFromClass(type(of: controller)),
-                                                     isContainer: isContainer, isEmbeddedChild: embedded) else { return }
+        let type = type(of: controller)
+        let raw = NSStringFromClass(type)
+        let system = raw.hasPrefix("_Tt") && PulseScreenNames.isSystemFramework(bundlePath: Bundle(for: type).bundlePath)
+        guard let name = PulseScreenNames.screenName(rawClassName: raw, isContainer: isContainer, isEmbeddedChild: embedded,
+                                                     fromSystemFramework: system) else { return }
         lock.lock(); let target = sink; lock.unlock()
         target?(name)
     }

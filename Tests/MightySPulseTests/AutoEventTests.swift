@@ -10,9 +10,9 @@ final class AutoEventTests: XCTestCase {
                 permissions: permissions, processStart: processStart)
     }
 
-    // MARK: opt-in app_opened and app_backgrounded
+    // MARK: lifecycle defaults
 
-    func testOpenAndBackgroundAreNotSentUnlessTheCachedConfigListsThem() {
+    func testOpenedStaysOptInAndBackgroundNeedsAnExistingSession() {
         let none = harness(config: nil)
         none.foreground(); none.advance(5); none.background(); none.flush()
         XCTAssertFalse(none.types().contains("pulse.app_opened")); XCTAssertFalse(none.types().contains("pulse.app_backgrounded"))
@@ -42,6 +42,104 @@ final class AutoEventTests: XCTestCase {
         let sent = h.eventsOfType("pulse.app_backgrounded")
         XCTAssertEqual(sent.count, 1)
         XCTAssertEqual((Harness.props(sent[0])["foregroundSeconds"] as? NSNumber)?.intValue, 42)
+        XCTAssertEqual(Harness.system(sent[0])["sessionSeconds"], "42")
+    }
+    func testBackgroundIsOnByDefaultAndFlushesExactlyOnceWithoutAnExplicitFlush() {
+        let h = harness(config: nil)
+        h.foreground(); h.send("warm")
+        h.advance(3) // Stay before the next interval, so only the lifecycle callback can trigger delivery.
+        let requests = h.transport.requests.count
+        h.background(); h.background()
+        XCTAssertEqual(h.transport.requests.count, requests + 1)
+        XCTAssertTrue(h.eventsOfType("pulse.app_opened").isEmpty)
+        let sent = h.eventsOfType("pulse.app_backgrounded")
+        XCTAssertEqual(sent.count, 1)
+        XCTAssertEqual(Harness.system(sent[0])["sessionSeconds"], "3")
+        XCTAssertEqual((Harness.props(sent[0])["foregroundSeconds"] as? NSNumber)?.intValue, 3)
+    }
+    func testBackgroundSessionSecondsUsesSessionStartAcrossForegrounds() {
+        let h = harness(config: nil)
+        h.foreground(); h.send("warm"); h.advance(3); h.background()
+        h.advance(5); h.foreground(); h.advance(2); h.background()
+        let sent = h.eventsOfType("pulse.app_backgrounded")
+        XCTAssertEqual(sent.count, 2)
+        XCTAssertEqual(Harness.system(sent[1])["sessionSeconds"], "10")
+        XCTAssertEqual((Harness.props(sent[1])["foregroundSeconds"] as? NSNumber)?.intValue, 2)
+        XCTAssertEqual(sent[0]["sessionId"] as? String, sent[1]["sessionId"] as? String)
+    }
+    func testBackgroundPersistsTheEndBeforeDeliveryAndNextLaunchUsesIt() throws {
+        let h = harness(config: nil)
+        h.foreground(); h.send("warm"); h.advance(61)
+        // Suspension or a lost response leaves the queue on disk.
+        var persistedBeforeSend = false
+        h.transport.handler = { _, _ in
+            if let bytes = h.storage.files[PulseUsageTracker.fileName],
+               let usage = try? JSONDecoder().decode(PulseUsage.self, from: bytes) {
+                persistedBeforeSend = usage.current?.last == h.clock.now.timeIntervalSince1970
+            }
+        }
+        h.background()
+        XCTAssertTrue(persistedBeforeSend)
+        let bytes = try XCTUnwrap(h.storage.files[PulseUsageTracker.fileName])
+        let usage = try JSONDecoder().decode(PulseUsage.self, from: bytes)
+        XCTAssertEqual((usage.current?.last ?? 0) - (usage.current?.start ?? 0), 61)
+        let original = try XCTUnwrap(h.eventsOfType("pulse.app_backgrounded").first)
+        h.runtime.finalSave(); h.settle()
+        h.transport.handler = nil
+        let next = harness(config: nil, storage: h.storage, clock: h.clock.fork(advancing: 1900))
+        next.send("next")
+        let replay = try XCTUnwrap(next.eventsOfType("pulse.app_backgrounded").first)
+        XCTAssertEqual(replay["timestamp"] as? String, original["timestamp"] as? String)
+        XCTAssertEqual(replay["sessionId"] as? String, original["sessionId"] as? String)
+        XCTAssertEqual(Harness.system(replay)["sessionSeconds"], "61")
+        XCTAssertEqual(Harness.system(next.eventsOfType("next")[0])["previousSessionSeconds"], "61")
+    }
+    func testBackgroundSwitchesStillPersistTheEndWithoutExtendingSignalActivity() throws {
+        for config in ["{\"disabledSignals\":[\"pulse.app_backgrounded\"]}",
+                       "{\"pausedSignals\":[\"pulse.app_backgrounded\"]}", "{\"automaticSignals\":false}"] {
+            let h = harness(config: config)
+            h.foreground(); h.send("warm"); h.advance(17); h.background()
+            XCTAssertTrue(h.eventsOfType("pulse.app_backgrounded").isEmpty, config)
+            h.advance(1783); h.send("next") // Exactly 30 minutes since warm, despite the callback at +17.
+            XCTAssertEqual(Harness.system(h.eventsOfType("next")[0])["previousSessionSeconds"], "17", config)
+            XCTAssertNotEqual(h.eventsOfType("warm")[0]["sessionId"] as? String,
+                              h.eventsOfType("next")[0]["sessionId"] as? String, config)
+        }
+        var options = PulseOptions(); options.automaticSignals = false
+        let h = harness(config: nil, options: options)
+        h.foreground(); h.send("warm"); h.advance(9); h.background()
+        XCTAssertTrue(h.eventsOfType("pulse.app_backgrounded").isEmpty)
+        let bytes = try XCTUnwrap(h.storage.files[PulseUsageTracker.fileName])
+        let usage = try JSONDecoder().decode(PulseUsage.self, from: bytes)
+        XCTAssertEqual((usage.current?.last ?? 0) - (usage.current?.start ?? 0), 9)
+    }
+    func testDefaultBackgroundDropsAtExactlyThirtyMinutesAndNeverStartsASession() throws {
+        for seconds in [1800.0, 1801.0] {
+            let h = harness(config: nil)
+            h.foreground(); h.send("warm")
+            let session = h.eventsOfType("warm")[0]["sessionId"] as? String
+            h.advance(seconds); h.background()
+            XCTAssertTrue(h.eventsOfType("pulse.app_backgrounded").isEmpty)
+            XCTAssertEqual(h.eventsOfType("pulse.session_started").count, 1)
+            h.runtime.state.sync { XCTAssertEqual(h.runtime.session, session) }
+            let bytes = try XCTUnwrap(h.storage.files[PulseUsageTracker.fileName])
+            let usage = try JSONDecoder().decode(PulseUsage.self, from: bytes)
+            XCTAssertEqual((usage.current?.last ?? 0) - (usage.current?.start ?? 0), seconds)
+        }
+        let edge = harness(config: nil)
+        edge.foreground(); edge.send("warm"); edge.advance(1799); edge.background()
+        XCTAssertEqual(edge.eventsOfType("pulse.app_backgrounded").count, 1)
+    }
+    func testDefaultBackgroundCapStillPersistsTheFinalEnd() throws {
+        let h = harness(config: nil)
+        h.send("warm")
+        for _ in 0..<25 { h.foreground(); h.advance(1); h.background() }
+        XCTAssertEqual(h.eventsOfType("pulse.app_backgrounded").count, 20)
+        let bytes = try XCTUnwrap(h.storage.files[PulseUsageTracker.fileName])
+        let usage = try JSONDecoder().decode(PulseUsage.self, from: bytes)
+        XCTAssertEqual((usage.current?.last ?? 0) - (usage.current?.start ?? 0), 25)
+        h.send("manual")
+        XCTAssertEqual(Harness.system(h.eventsOfType("manual")[0])["droppedAutomatic"], "5")
     }
     func testBackgroundedNeverOpensASessionAndIsDroppedAfterThirtyMinutesOfSilence() {
         let h = harness()
@@ -343,7 +441,7 @@ final class AutoEventTests: XCTestCase {
         XCTAssertEqual(config.enabledSignals, ["pulse.app_opened"])
         XCTAssertEqual(config.pausedSignals, ["pulse.screen_view"])
         let effective = PulseEffectiveConfig(options: PulseOptions(), remote: config)
-        XCTAssertTrue(effective.sends("pulse.app_opened")); XCTAssertFalse(effective.sends("pulse.app_backgrounded"))
+        XCTAssertTrue(effective.sends("pulse.app_opened")); XCTAssertTrue(effective.sends("pulse.app_backgrounded"))
         XCTAssertFalse(effective.sends("pulse.screen_view")); XCTAssertTrue(effective.sends("manual.x"))
         XCTAssertTrue(effective.sends("pulse.deep_link"))
         let wrong = try XCTUnwrap(PulseRemoteConfig.parse(Data("{\"enabledSignals\":\"pulse.app_opened\",\"pausedSignals\":7}".utf8)))
@@ -391,6 +489,89 @@ final class AutoLifecycleTests: XCTestCase {
         center.post(name: NSApplication.didResignActiveNotification, object: nil)
         h.settle(); h.flush()
         XCTAssertEqual(h.eventsOfType("pulse.app_opened").count, 1)
+        XCTAssertEqual(h.eventsOfType("pulse.app_backgrounded").count, 1)
+        _ = lifecycle
+    }
+}
+#endif
+
+#if canImport(UIKit) && !os(watchOS)
+import UIKit
+
+final class AutoBackgroundTaskTests: XCTestCase {
+    func testLeaseStartsBeforeTransportAndEndsAfterFlushCompletes() {
+        let h = Harness(automatic: true)
+        h.foreground(); h.send("warm"); h.advance(3)
+        var began = false
+        var response: ((PulseResponse) -> Void)?
+        h.transport.handler = { _, completion in
+            XCTAssertTrue(began)
+            response = completion
+        }
+        let ended = expectation(description: "Background task ended")
+        let flush = PulseBackgroundFlush(runtime: h.runtime, beginTask: { _ in
+            began = true
+            return UIBackgroundTaskIdentifier(rawValue: 42)
+        }, endTask: { id in
+            XCTAssertEqual(id.rawValue, 42)
+            ended.fulfill()
+        })
+        flush.start(); h.settle()
+        XCTAssertEqual(h.eventsOfType("pulse.app_backgrounded").count, 1)
+        XCTAssertEqual(h.runtime.waiterCountForTests, 1)
+        response?(PulseResponse(status: 202)); h.settle()
+        wait(for: [ended], timeout: 2)
+        XCTAssertEqual(h.runtime.waiterCountForTests, 0)
+    }
+
+    func testExpiryEndsLeaseOnceAndLeavesOriginalSignalForRestart() throws {
+        let h = Harness(automatic: true)
+        h.foreground(); h.send("warm"); h.advance(3)
+        h.transport.handler = { _, _ in }
+        var expire: (() -> Void)?
+        var ended = 0
+        let flush = PulseBackgroundFlush(runtime: h.runtime, beginTask: { callback in
+            expire = callback
+            return UIBackgroundTaskIdentifier(rawValue: 43)
+        }, endTask: { _ in ended += 1 })
+        flush.start(); h.settle()
+        let original = try XCTUnwrap(h.eventsOfType("pulse.app_backgrounded").first)
+        expire?(); expire?(); h.settle()
+        XCTAssertEqual(ended, 1)
+        XCTAssertEqual(h.runtime.waiterCountForTests, 0)
+        XCTAssertEqual(h.runtime.countForTests, 1)
+        h.runtime.finalSave(); h.settle()
+        let next = Harness(storage: h.storage, clock: h.clock.fork(advancing: 1900), automatic: true)
+        next.flush()
+        XCTAssertEqual(next.eventsOfType("pulse.app_backgrounded").first?["timestamp"] as? String,
+                       original["timestamp"] as? String)
+    }
+
+    func testUnavailableLeaseStillPersistsAndAttemptsDeliveryWithoutAWaiter() {
+        let h = Harness(automatic: true)
+        h.foreground(); h.send("warm"); h.advance(3)
+        h.transport.handler = { _, _ in }
+        let flush = PulseBackgroundFlush(runtime: h.runtime, beginTask: { _ in .invalid },
+                                         endTask: { _ in XCTFail("No task was granted") })
+        flush.start(); h.settle()
+        XCTAssertEqual(h.eventsOfType("pulse.app_backgrounded").count, 1)
+        XCTAssertEqual(h.runtime.countForTests, 1)
+        XCTAssertEqual(h.runtime.waiterCountForTests, 0)
+        XCTAssertNotNil(h.storage.queueName)
+    }
+
+    func testApplicationAndSceneBackgroundNotificationsSendOneSignal() {
+        let h = Harness(automatic: true)
+        let lifecycle = PulseLifecycle(runtime: h.runtime)
+        let center = NotificationCenter.default
+        center.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        h.settle(); h.send("warm"); h.advance(3)
+        center.post(name: UIApplication.willResignActiveNotification, object: nil)
+        h.settle()
+        XCTAssertTrue(h.eventsOfType("pulse.app_backgrounded").isEmpty)
+        center.post(name: UIScene.didEnterBackgroundNotification, object: nil)
+        center.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        h.settle()
         XCTAssertEqual(h.eventsOfType("pulse.app_backgrounded").count, 1)
         _ = lifecycle
     }

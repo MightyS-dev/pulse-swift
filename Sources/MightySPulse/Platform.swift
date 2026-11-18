@@ -169,16 +169,19 @@ internal enum PulseEnvironment {
 internal final class PulseLifecycle {
     private var observers: [NSObjectProtocol] = []
     private weak var runtime: PulseRuntime?
+    #if canImport(UIKit) && !os(watchOS)
+    private var inBackground = false // Main thread only, shared by application and scene notifications.
+    #endif
     init(runtime: PulseRuntime) {
         self.runtime = runtime
         let center = NotificationCenter.default
         var background: [Notification.Name] = [], termination: [Notification.Name] = []
         var active: [Notification.Name] = [], left: [Notification.Name] = []
         #if canImport(UIKit) && !os(watchOS)
-        background = [UIApplication.didEnterBackgroundNotification, UIApplication.willResignActiveNotification]
+        background = [UIApplication.willResignActiveNotification]
         termination = [UIApplication.willTerminateNotification]
-        active = [UIApplication.didBecomeActiveNotification]
-        left = [UIApplication.didEnterBackgroundNotification]
+        active = [UIApplication.didBecomeActiveNotification, UIScene.didActivateNotification]
+        left = [UIApplication.didEnterBackgroundNotification, UIScene.didEnterBackgroundNotification]
         #elseif os(macOS)
         background = [NSApplication.didResignActiveNotification, NSApplication.didHideNotification]
         termination = [NSApplication.willTerminateNotification]
@@ -192,10 +195,23 @@ internal final class PulseLifecycle {
         #endif
         // The automatic events go first, so that the queue save that follows already holds them.
         for name in active {
+            #if canImport(UIKit) && !os(watchOS)
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self, weak runtime] _ in
+                self?.inBackground = false
+                runtime?.foreground()
+            })
+            #else
             observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.foreground() })
+            #endif
         }
         for name in left {
+            #if canImport(UIKit) && !os(watchOS)
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
+                self?.enterBackground(notification)
+            })
+            #else
             observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.noteBackground() })
+            #endif
         }
         for name in background {
             observers.append(center.addObserver(forName: name, object: nil, queue: nil) { [weak runtime] _ in runtime?.backgroundSave() })
@@ -205,6 +221,29 @@ internal final class PulseLifecycle {
         }
     }
     deinit { for observer in observers { NotificationCenter.default.removeObserver(observer) } }
+
+    #if canImport(UIKit) && !os(watchOS)
+    private func enterBackground(_ notification: Notification) {
+        guard let runtime = runtime else { return }
+        let application = Self.application()
+        // A window going to the background does not background the app while another window is still foreground.
+        if let scene = notification.object as? UIScene,
+           application?.connectedScenes.contains(where: {
+               $0 !== scene && ($0.activationState == .foregroundActive || $0.activationState == .foregroundInactive)
+           }) == true { return }
+        guard !inBackground else { return }
+        inBackground = true
+        // Start the OS lease before queueing disk work or transport. The lease owns itself until completion/expiry.
+        let flush = PulseBackgroundFlush(application: application, runtime: runtime)
+        flush.start()
+    }
+
+    private static func application() -> UIApplication? {
+        guard Bundle.main.bundleURL.pathExtension != "appex" else { return nil }
+        return (UIApplication.self as AnyObject).perform(NSSelectorFromString("sharedApplication"))?
+            .takeUnretainedValue() as? UIApplication
+    }
+    #endif
 
     /// The app may already be active when the SDK starts (initialize called late), so the notification was missed.
     /// Reads the state on the main thread without touching `UIApplication.shared`, which app extensions cannot use.
@@ -222,3 +261,39 @@ internal final class PulseLifecycle {
         #endif
     }
 }
+
+#if canImport(UIKit) && !os(watchOS)
+/// Main-thread ownership of the finite background time. Expiry removes only the flush waiter, never the saved queue.
+internal final class PulseBackgroundFlush {
+    private let runtime: PulseRuntime
+    private let beginTask: (@escaping () -> Void) -> UIBackgroundTaskIdentifier
+    private let endTask: (UIBackgroundTaskIdentifier) -> Void
+    private let flushID = UUID()
+    private var task = UIBackgroundTaskIdentifier.invalid
+    convenience init(application: UIApplication?, runtime: PulseRuntime) {
+        self.init(runtime: runtime, beginTask: { expiration in
+            application?.beginBackgroundTask(withName: "Pulse flush", expirationHandler: expiration) ?? .invalid
+        }, endTask: { application?.endBackgroundTask($0) })
+    }
+    init(runtime: PulseRuntime, beginTask: @escaping (@escaping () -> Void) -> UIBackgroundTaskIdentifier,
+         endTask: @escaping (UIBackgroundTaskIdentifier) -> Void) {
+        self.runtime = runtime; self.beginTask = beginTask; self.endTask = endTask
+    }
+    func start() {
+        task = beginTask { [self] in
+            runtime.cancelFlush(id: flushID)
+            finish()
+        }
+        runtime.noteBackground()
+        runtime.backgroundSave()
+        guard task != .invalid else { return }
+        runtime.flush(id: flushID) { [self] in DispatchQueue.main.async { self.finish() } }
+    }
+    private func finish() {
+        guard task != .invalid else { return }
+        let finished = task
+        task = .invalid
+        endTask(finished)
+    }
+}
+#endif

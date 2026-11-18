@@ -3,7 +3,7 @@ import CoreFoundation
 
 internal enum PulseInfo {
     static let sdkName = "pulse-swift"
-    static let version = "0.9.7"
+    static let version = "0.9.8"
 }
 
 /// Settings passed to ``Pulse/initialize(appKey:options:)``.
@@ -37,11 +37,11 @@ public struct PulseOptions {
     /// automatic capture at all (the dashboard can also switch it off, and `true` never overrides it); ``Pulse/screen(_:)`` and the SwiftUI `pulseScreen(_:)` modifier still work.
     /// On macOS (AppKit) nothing is captured automatically; use the manual calls.
     public var automaticScreenViews = true
-    /// Sends the automatic signals `pulse.session_started`, `pulse.new_install`, `pulse.app_updated` and
-    /// `pulse.screen_view`. Default `true`.
+    /// Sends lifecycle signals including `pulse.app_backgrounded`, deep links, permission changes and heatmaps
+    /// when the dashboard allows them. Default `true`. `pulse.app_opened` requires dashboard opt-in.
     ///
     /// The dashboard's setting decides (everything is on when it cannot be read). `false` here switches the
-    /// session, new install and app updated signals off whatever the dashboard says; `true` never overrides the dashboard.
+    /// automatic signals off whatever the dashboard says; `true` never overrides the dashboard.
     public var automaticSignals = true
     /// Overrides the app version taken from the bundle. Default `nil`.
     public var appVersion: String?

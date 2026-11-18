@@ -10,13 +10,13 @@ few properties from an iOS, iPadOS, macOS, tvOS or watchOS app, and see them in 
 ## Install
 
 **Xcode:** File > Add Package Dependencies, paste `https://github.com/MightyS-dev/pulse-swift`, choose "Up to Next Major
-Version" from `0.9.7`, then add the `MightySPulse` library to your app target.
+Version" from `0.9.8`, then add the `MightySPulse` library to your app target.
 
 **Package.swift:**
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.7")
+    .package(url: "https://github.com/MightyS-dev/pulse-swift", from: "0.9.8")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -45,6 +45,13 @@ Initialize once, early in app startup; a second call is ignored. Up to 100 calls
 kept and sent afterwards. All calls are thread-safe and none throws. Hashing, disk work and sending run on a background
 queue.
 
+## See your first signal
+
+1. Sign in at [app.pulse.mightys.dev](https://app.pulse.mightys.dev) and open the app whose key you used.
+2. A debug or development build sends test data (see Test mode below). Turn on the **Test mode** switch in the bar
+   above the figures to see it; turn it off again for real users.
+3. Open **Live** in the app menu: signals appear there as they arrive. The Overview and the other screens follow shortly.
+
 ## What is sent and what is never sent
 
 Sent with every signal: your signal name, optional number and properties, a UTC timestamp, the debug flag, a random session
@@ -66,11 +73,14 @@ the main thread. Not every field exists on every platform: for example `orientat
 
 Usage statistics are kept in one small file next to the install id, in the app's own storage, and deleted by opt-out.
 
-Automatic signals: the SDK sends three signals itself. `pulse.session_started` is sent when a new session begins (app start,
+Automatic signals: `pulse.session_started` is sent when a new session begins (app start,
 or the first signal after 30 minutes of inactivity). `pulse.new_install` is sent once, on the first launch after install.
 `pulse.app_updated` is sent once when the app version or build differs from the previous launch, with the properties
 `previousVersion` and `previousBuild`. They are one per session or rarer, they follow opt-out and the debug flag like any
-signal, and there is nothing to set up.
+signal, and there is nothing to set up. `pulse.app_backgrounded` is sent by default when the app goes to the background,
+with `foregroundSeconds` and the system field `sessionSeconds`. The SDK saves the session end first, then flushes
+immediately (with an iOS background task). If delivery cannot finish, the saved queue sends it on the next launch with
+its original timestamp. The next session also reports the saved length as `previousSessionSeconds`.
 
 Sessions use a random id that changes after 30 minutes of inactivity.
 
@@ -130,7 +140,7 @@ Pulse.initialize(appKey: "YOUR_APP_KEY", options: options)
 | `gzip` | true | Compresses bodies larger than 1024 bytes. |
 | `debug` | true in a Debug build, false in a Release build | Marks signals as test data and prints short diagnostics, never signal contents. See [Test mode](#test-mode). |
 | `automaticScreenViews` | true | Sends `pulse.screen_view` automatically on UIKit. See [Screen views](#screen-views). |
-| `automaticSignals` | true | `false` stops `pulse.session_started`, `pulse.new_install` and `pulse.app_updated`. See [Settings from the portal](#settings-from-the-portal). |
+| `automaticSignals` | true | `false` stops lifecycle signals (including `pulse.app_backgrounded`), deep links, permission changes and heatmaps. See [Settings from the portal](#settings-from-the-portal). |
 | `appVersion` | bundle short version | Overrides the app version. |
 | `captureErrors` | true | Records crashes and sends them on the next launch. `false` installs no handler. See [Errors and crashes](#errors-and-crashes). |
 | `errorDetail` | `.full` | `.typeOnly` sends only the error type, without message and frames. |
@@ -187,8 +197,25 @@ names where the build keeps them; a release build with stripped symbols shows `b
 The SDK sends these signals by itself: `pulse.session_started`, `pulse.new_install`, `pulse.app_updated`,
 `pulse.screen_view`, `pulse.permission_changed`, `pulse.deep_link`, `pulse.app_opened`, `pulse.app_backgrounded` and
 `pulse.heatmap` (off until the portal switches heatmaps on; see [Heatmaps](#heatmaps)).
-`pulse.app_opened` and `pulse.app_backgrounded` are off until the dashboard switches them on. `pulse.deep_link` is sent
+`pulse.app_opened` is off until the dashboard switches it on. `pulse.app_backgrounded` is on by default. `pulse.deep_link` is sent
 when you call `Pulse.deepLink(url)`. Crash and exit signals are `pulse.error` (see [Errors and crashes](#errors-and-crashes)).
+
+| Signal | Default | Plan usage |
+| --- | --- | --- |
+| `pulse.session_started` | On | Free, does not count toward your plan |
+| `pulse.app_opened` | Off, enabled by the dashboard | Free, does not count toward your plan |
+| `pulse.app_backgrounded` | On | Free, does not count toward your plan |
+| `pulse.new_install` | On | Free, does not count toward your plan |
+| `pulse.app_updated` | On | Free, does not count toward your plan |
+| `pulse.screen_view` | On | Counts toward your plan |
+| `pulse.permission_changed` | On | Counts toward your plan |
+| `pulse.deep_link` | On, when you call `Pulse.deepLink(url)` | Counts toward your plan |
+| `pulse.heatmap` | Off, enabled by the dashboard | Counts toward your plan |
+
+The free lifecycle allowance is at most 50 signals per app, user and UTC day; above that they count toward the plan.
+The dashboard can disable or pause a type with `disabledSignals` or `pausedSignals`. Leaving the app never opens a
+session: a background signal is dropped after 30 minutes or more without another signal, while the session end is
+still saved for the next launch.
 
 Switch-off options in code: `automaticSignals`, `automaticScreenViews`, `captureErrors` and `captureHeatmaps`. The dashboard can also
 switch every type off. Defaults and what each signal costs: https://pulse.mightys.dev/docs/automatic-signals/
@@ -294,8 +321,8 @@ works also when `Pulse.optOut` is on. App extensions get the state but never a s
 
 The dashboard can switch screen views, the automatic signals and groups of fields (device, screen, settings, network, app, usage) on or off for your app, without a package update. The SDK reads these settings once per launch, in the background, and keeps them in its own storage. A change applies from the next launch of the app and stays the same for the whole run.
 
-- Everything is on by default, and stays on whenever the settings cannot be read (offline, an error, nothing saved yet).
-- The dashboard decides. In code you can only switch things off: `automaticScreenViews = false` stops the automatic screen hook (manual `Pulse.screen` still sends), `automaticSignals = false` stops the session, new install and app updated signals. Setting either to `true` never overrides a switch made in the dashboard.
+- Automatic signals are on by default, except `pulse.app_opened` and heatmaps, which need the dashboard to enable them. These defaults apply when settings cannot be read (offline, an error, nothing saved yet).
+- The dashboard decides. In code you can only switch things off: `automaticScreenViews = false` stops the automatic screen hook (manual `Pulse.screen` still sends), `automaticSignals = false` stops lifecycle signals including the background signal, deep links, permission changes and heatmaps. Setting either to `true` never overrides a switch made in the dashboard.
 - Fields that are switched off are left out of every signal. The base fields (platform, OS, app version, build, device model, locale, SDK and bundle identifier) are always sent.
 - The request carries only your app key. It never delays `track` or `flush`, and opt-out deletes the saved settings with everything else.
 
